@@ -21,6 +21,19 @@ func NewSfzPlayer(sfzPath string) (*SfzPlayer, error)
 func ParseSfzFile(filePath string) (*SfzData, error)
 ```
 
+**Sample Access:**
+```go
+func (p *SfzPlayer) GetSample(samplePath string) (*Sample, error)
+func (p *SfzPlayer) GetSfzData() *SfzData
+```
+
+**Sample Management:**
+```go
+func NewSampleCache() *SampleCache
+func (sc *SampleCache) LoadSample(filePath string) (*Sample, error)
+func (sc *SampleCache) LoadSampleRelative(sfzDir, relativePath string) (*Sample, error)
+```
+
 **Type Conversion Helpers:**
 ```go
 func (s *SfzSection) GetStringOpcode(opcode string) string
@@ -41,11 +54,22 @@ type SfzSection struct {
     Type    string            // "global", "group", or "region"
     Opcodes map[string]string // opcode name -> value
 }
+
+type Sample struct {
+    FilePath   string    // Original file path
+    Data       []float64 // Audio data as float64 samples (-1.0 to 1.0)
+    SampleRate int       // Sample rate in Hz
+    Channels   int       // Number of audio channels
+    Length     int       // Number of samples per channel
+}
 ```
 
 ## Features
 
 - **SFZ File Parsing**: Complete parser for SFZ files with structured data representation
+- **WAV Sample Loading**: Automatic loading and caching of WAV audio samples
+- **Sample Caching**: Efficient caching system to avoid duplicate sample loads
+- **Normalized Audio Data**: Audio samples normalized to float64 range (-1.0 to 1.0)
 - **Error Handling**: Graceful handling of missing files and invalid syntax
 - **Debug Logging**: Comprehensive logging with configurable namespaces
 - **Type Conversion**: Helper functions for string to numeric type conversion
@@ -62,8 +86,8 @@ The `testdata/` directory contains:
 
 - Go 1.21+ (tested on 1.21, 1.22, 1.23, 1.24)
 - github.com/GeoffreyPlitt/debuggo - for debug logging
+- github.com/go-audio/wav - for WAV file loading
 - JACK client library for Go (planned: github.com/xthexder/go-jack)
-- WAV file reader (planned: github.com/go-audio/wav)
 
 ## Usage
 
@@ -76,15 +100,22 @@ import (
 )
 
 func main() {
-    // Parse an SFZ file
+    // Parse an SFZ file and load all samples
     player, err := gosfzplayer.NewSfzPlayer("path/to/instrument.sfz")
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
     
-    // Player is ready (audio playback not yet implemented)
-    fmt.Println("SFZ file parsed successfully!")
+    // Access loaded samples
+    sample, err := player.GetSample("sample1.wav")
+    if err != nil {
+        fmt.Printf("Error getting sample: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("Loaded sample: %d Hz, %d channels, %d samples\n", 
+        sample.SampleRate, sample.Channels, sample.Length)
 }
 ```
 
