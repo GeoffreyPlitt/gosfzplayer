@@ -31,13 +31,13 @@ type Voice struct {
 	noteOn     bool
 
 	// ADSR Envelope
-	envelopeState    EnvelopeState
-	envelopeLevel    float64 // Current envelope level (0.0 to 1.0)
-	envelopeTime     float64 // Time in current envelope stage (in samples)
-	attackSamples    float64 // Attack time in samples
-	decaySamples     float64 // Decay time in samples
-	sustainLevel     float64 // Sustain level (0.0 to 1.0)
-	releaseSamples   float64 // Release time in samples
+	envelopeState  EnvelopeState
+	envelopeLevel  float64 // Current envelope level (0.0 to 1.0)
+	envelopeTime   float64 // Time in current envelope stage (in samples)
+	attackSamples  float64 // Attack time in samples
+	decaySamples   float64 // Decay time in samples
+	sustainLevel   float64 // Sustain level (0.0 to 1.0)
+	releaseSamples float64 // Release time in samples
 
 	// Loop Support
 	loopMode  string  // Loop mode: no_loop, one_shot, loop_continuous, loop_sustain
@@ -48,10 +48,10 @@ type Voice struct {
 // InitializeEnvelope sets up the ADSR envelope for a voice
 func (v *Voice) InitializeEnvelope(sampleRate uint32) {
 	// Default ADSR values (in seconds)
-	defaultAttack := 0.001   // 1ms
-	defaultDecay := 0.1      // 100ms
-	defaultSustain := 1.0    // 100%
-	defaultRelease := 0.1    // 100ms
+	defaultAttack := 0.001 // 1ms
+	defaultDecay := 0.1    // 100ms
+	defaultSustain := 1.0  // 100%
+	defaultRelease := 0.1  // 100ms
 
 	// Parse envelope opcodes with inheritance (Region → Group → Global)
 	attack := v.region.GetInheritedFloatOpcode("ampeg_attack", defaultAttack)

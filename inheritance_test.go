@@ -9,9 +9,9 @@ func TestGlobalGroupInheritance(t *testing.T) {
 	global := &SfzSection{
 		Type: "global",
 		Opcodes: map[string]string{
-			"volume":     "-6.0",   // Global volume
-			"tune":       "+10",    // Global tune
-			"transpose":  "0",      // Global transpose
+			"volume":       "-6.0", // Global volume
+			"tune":         "+10",  // Global tune
+			"transpose":    "0",    // Global transpose
 			"ampeg_attack": "0.1",  // Global attack
 		},
 	}
@@ -19,9 +19,9 @@ func TestGlobalGroupInheritance(t *testing.T) {
 	group := &SfzSection{
 		Type: "group",
 		Opcodes: map[string]string{
-			"volume":       "-3.0",  // Override global volume
-			"pitch":        "+50",   // Group-specific pitch
-			"ampeg_decay":  "0.2",   // Group-specific decay
+			"volume":      "-3.0", // Override global volume
+			"pitch":       "+50",  // Group-specific pitch
+			"ampeg_decay": "0.2",  // Group-specific decay
 		},
 		GlobalRef: global,
 	}
@@ -29,7 +29,7 @@ func TestGlobalGroupInheritance(t *testing.T) {
 	region := &SfzSection{
 		Type: "region",
 		Opcodes: map[string]string{
-			"pitch_keycenter": "60", // Region-specific pitch_keycenter
+			"pitch_keycenter": "60",  // Region-specific pitch_keycenter
 			"ampeg_release":   "0.5", // Region-specific release
 		},
 		ParentGroup: group,
@@ -45,23 +45,23 @@ func TestGlobalGroupInheritance(t *testing.T) {
 	}{
 		// Volume: Group overrides Global
 		{"volume inheritance", "volume", -3.0, "float"},
-		
+
 		// Tune: Only in Global
 		{"tune inheritance", "tune", 10.0, "float"},
-		
+
 		// Pitch: Only in Group
 		{"pitch inheritance", "pitch", 50.0, "float"},
-		
+
 		// Transpose: Only in Global
 		{"transpose inheritance", "transpose", 0, "int"},
-		
+
 		// Pitch_keycenter: Only in Region
 		{"pitch_keycenter inheritance", "pitch_keycenter", 60, "int"},
-		
+
 		// ADSR: Mixed inheritance
-		{"ampeg_attack inheritance", "ampeg_attack", 0.1, "float"},   // From Global
-		{"ampeg_decay inheritance", "ampeg_decay", 0.2, "float"},     // From Group  
-		{"ampeg_release inheritance", "ampeg_release", 0.5, "float"}, // From Region
+		{"ampeg_attack inheritance", "ampeg_attack", 0.1, "float"},    // From Global
+		{"ampeg_decay inheritance", "ampeg_decay", 0.2, "float"},      // From Group
+		{"ampeg_release inheritance", "ampeg_release", 0.5, "float"},  // From Region
 		{"ampeg_sustain inheritance", "ampeg_sustain", 80.0, "float"}, // Default (not defined anywhere)
 	}
 
@@ -153,7 +153,7 @@ func TestComplexPitchCalculation(t *testing.T) {
 	group := &SfzSection{
 		Type: "group",
 		Opcodes: map[string]string{
-			"transpose": "12", // +1 octave (12 semitones)
+			"transpose": "12",  // +1 octave (12 semitones)
 			"pitch":     "-10", // -10 cents
 		},
 		GlobalRef: global,
@@ -175,7 +175,7 @@ func TestComplexPitchCalculation(t *testing.T) {
 	// Test MIDI note 72 (C5) with pitch_keycenter=60 (C4)
 	// Expected calculation:
 	// - Base semitones: 72 - 60 = 12 semitones (1 octave up)
-	// - Transpose: +12 semitones (another octave up) 
+	// - Transpose: +12 semitones (another octave up)
 	// - Tune: +20 cents = +0.2 semitones
 	// - Pitch: -10 cents = -0.1 semitones
 	// - Total: 12 + 12 + 0.2 - 0.1 = 24.1 semitones

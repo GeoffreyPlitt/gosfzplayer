@@ -9,10 +9,10 @@ func TestEnvelopeInitialization(t *testing.T) {
 	region := &SfzSection{
 		Type: "region",
 		Opcodes: map[string]string{
-			"ampeg_attack":  "0.5",  // 500ms attack
-			"ampeg_decay":   "0.2",  // 200ms decay
-			"ampeg_sustain": "75",   // 75% sustain level
-			"ampeg_release": "1.0",  // 1000ms release
+			"ampeg_attack":  "0.5", // 500ms attack
+			"ampeg_decay":   "0.2", // 200ms decay
+			"ampeg_sustain": "75",  // 75% sustain level
+			"ampeg_release": "1.0", // 1000ms release
 		},
 	}
 
@@ -94,7 +94,7 @@ func TestEnvelopeProcessing(t *testing.T) {
 		Type: "region",
 		Opcodes: map[string]string{
 			"ampeg_attack":  "0.001", // Very short attack (44.1 samples)
-			"ampeg_decay":   "0.001", // Very short decay  
+			"ampeg_decay":   "0.001", // Very short decay
 			"ampeg_sustain": "50",    // 50% sustain
 			"ampeg_release": "0.001", // Very short release
 		},
@@ -141,10 +141,10 @@ func TestEnvelopeDoesNotCrash(t *testing.T) {
 	region := &SfzSection{
 		Type: "region",
 		Opcodes: map[string]string{
-			"ampeg_attack":  "0",     // Instant attack
-			"ampeg_decay":   "0",     // Instant decay
-			"ampeg_sustain": "0",     // 0% sustain
-			"ampeg_release": "0",     // Instant release
+			"ampeg_attack":  "0", // Instant attack
+			"ampeg_decay":   "0", // Instant decay
+			"ampeg_sustain": "0", // 0% sustain
+			"ampeg_release": "0", // Instant release
 		},
 	}
 

@@ -21,10 +21,10 @@ type SfzData struct {
 
 // SfzSection represents a section in the SFZ file (global, group, or region)
 type SfzSection struct {
-	Type      string            // "global", "group", or "region"
-	Opcodes   map[string]string // opcode name -> value
-	ParentGroup *SfzSection     // For regions: the group they belong to (nil if no group)
-	GlobalRef   *SfzSection     // Reference to the global section for inheritance
+	Type        string            // "global", "group", or "region"
+	Opcodes     map[string]string // opcode name -> value
+	ParentGroup *SfzSection       // For regions: the group they belong to (nil if no group)
+	GlobalRef   *SfzSection       // Reference to the global section for inheritance
 }
 
 // ParseSfzFile parses an SFZ file and returns the structured data

@@ -318,7 +318,7 @@ func (jc *JackClient) calculatePitchRatio(region *SfzSection, midiNote uint8) fl
 	tune := region.GetInheritedFloatOpcode("tune", 0.0)
 	semitones += tune / 100.0 // 100 cents = 1 semitone
 
-	// Apply pitch (in cents) with inheritance - convert cents to semitones  
+	// Apply pitch (in cents) with inheritance - convert cents to semitones
 	pitch := region.GetInheritedFloatOpcode("pitch", 0.0)
 	semitones += pitch / 100.0 // 100 cents = 1 semitone
 

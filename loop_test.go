@@ -18,13 +18,13 @@ func TestLoopInitialization(t *testing.T) {
 
 	// Test different loop modes
 	testCases := []struct {
-		name           string
-		loopMode       string
-		loopStart      string
-		loopEnd        string
-		expectedMode   string
-		expectedStart  float64
-		expectedEnd    float64
+		name          string
+		loopMode      string
+		loopStart     string
+		loopEnd       string
+		expectedMode  string
+		expectedStart float64
+		expectedEnd   float64
 	}{
 		{
 			name:          "no_loop mode",
@@ -236,8 +236,8 @@ func TestLoopEdgeCases(t *testing.T) {
 			Type: "region",
 			Opcodes: map[string]string{
 				"loop_mode":  "loop_continuous",
-				"loop_start": "80",  // Start after end
-				"loop_end":   "20",  // End before start
+				"loop_start": "80", // Start after end
+				"loop_end":   "20", // End before start
 			},
 		}
 
