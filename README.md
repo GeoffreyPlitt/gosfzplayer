@@ -15,24 +15,6 @@ A Go library that implements a simple SFZ sampler with WAV sample loading.
 func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 ```
 
-**Parser Functions:**
-```go
-func ParseSfzFile(filePath string) (*SfzData, error)
-```
-
-**Sample Access:**
-```go
-func (p *SfzPlayer) GetSample(samplePath string) (*Sample, error)
-func (p *SfzPlayer) GetSfzData() *SfzData
-```
-
-**Type Conversion Helpers:**
-```go
-func (s *SfzSection) GetStringOpcode(opcode string) string
-func (s *SfzSection) GetIntOpcode(opcode string, defaultValue int) int
-func (s *SfzSection) GetFloatOpcode(opcode string, defaultValue float64) float64
-```
-
 
 ## Features
 
@@ -69,22 +51,17 @@ import (
 )
 
 func main() {
-    // Parse an SFZ file and load all samples
+    // Create SFZ player - parses file, loads samples, starts JACK client
     player, err := gosfzplayer.NewSfzPlayer("path/to/instrument.sfz", "MyInstrument")
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
     
-    // Access loaded samples
-    sample, err := player.GetSample("sample1.wav")
-    if err != nil {
-        fmt.Printf("Error getting sample: %v\n", err)
-        return
-    }
+    fmt.Println("SFZ Player created successfully!")
     
-    fmt.Printf("Loaded sample: %d Hz, %d channels, %d samples\n", 
-        sample.SampleRate, sample.Channels, sample.Length)
+    // Player is now ready for MIDI input and audio output
+    // Use JACK connection tools like QJackCtl to connect MIDI and audio
 }
 ```
 
