@@ -239,9 +239,9 @@ func (jc *JackClient) noteOff(note uint8) {
 // regionMatches checks if a region should respond to the given note and velocity
 func (jc *JackClient) regionMatches(region *SfzSection, note, velocity uint8) bool {
 	// Check key range
-	lokey := region.GetIntOpcode("lokey", 0)
-	hikey := region.GetIntOpcode("hikey", 127)
-	key := region.GetIntOpcode("key", -1)
+	lokey := region.GetInheritedIntOpcode("lokey", 0)
+	hikey := region.GetInheritedIntOpcode("hikey", 127)
+	key := region.GetInheritedIntOpcode("key", -1)
 
 	// If key is specified, use it as both lokey and hikey
 	if key >= 0 {
@@ -254,8 +254,8 @@ func (jc *JackClient) regionMatches(region *SfzSection, note, velocity uint8) bo
 	}
 
 	// Check velocity range
-	lovel := region.GetIntOpcode("lovel", 1)
-	hivel := region.GetIntOpcode("hivel", 127)
+	lovel := region.GetInheritedIntOpcode("lovel", 1)
+	hivel := region.GetInheritedIntOpcode("hivel", 127)
 
 	if int(velocity) < lovel || int(velocity) > hivel {
 		return false
@@ -266,14 +266,8 @@ func (jc *JackClient) regionMatches(region *SfzSection, note, velocity uint8) bo
 
 // calculateVolume calculates the final volume for a voice
 func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float64 {
-	// Base volume from region
-	volume := region.GetFloatOpcode("volume", 0.0)
-
-	// Apply global volume if present
-	if jc.player.sfzData.Global != nil {
-		globalVolume := jc.player.sfzData.Global.GetFloatOpcode("volume", 0.0)
-		volume += globalVolume
-	}
+	// Get volume with inheritance (Region → Group → Global)
+	volume := region.GetInheritedFloatOpcode("volume", 0.0)
 
 	// Clamp volume to reasonable range
 	if volume > 6.0 {
@@ -294,13 +288,8 @@ func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float6
 
 // calculatePan calculates the pan position for a voice
 func (jc *JackClient) calculatePan(region *SfzSection) float64 {
-	pan := region.GetFloatOpcode("pan", 0.0)
-
-	// Apply global pan if present
-	if jc.player.sfzData.Global != nil {
-		globalPan := jc.player.sfzData.Global.GetFloatOpcode("pan", 0.0)
-		pan += globalPan
-	}
+	// Get pan with inheritance (Region → Group → Global)
+	pan := region.GetInheritedFloatOpcode("pan", 0.0)
 
 	// Clamp pan to valid range
 	if pan > 100.0 {
@@ -315,17 +304,29 @@ func (jc *JackClient) calculatePan(region *SfzSection) float64 {
 
 // calculatePitchRatio calculates the pitch adjustment ratio for a voice
 func (jc *JackClient) calculatePitchRatio(region *SfzSection, midiNote uint8) float64 {
-	// Get pitch_keycenter (root note) - default to played note if not specified
-	pitchKeycenter := region.GetIntOpcode("pitch_keycenter", int(midiNote))
+	// Get pitch_keycenter (root note) with inheritance - default to played note if not specified
+	pitchKeycenter := region.GetInheritedIntOpcode("pitch_keycenter", int(midiNote))
 
-	// Calculate semitone difference
-	semitones := int(midiNote) - pitchKeycenter
+	// Calculate semitone difference from pitch_keycenter
+	semitones := float64(int(midiNote) - pitchKeycenter)
+
+	// Apply transpose (in semitones) with inheritance
+	transpose := region.GetInheritedIntOpcode("transpose", 0)
+	semitones += float64(transpose)
+
+	// Apply tune (in cents) with inheritance - convert cents to semitones
+	tune := region.GetInheritedFloatOpcode("tune", 0.0)
+	semitones += tune / 100.0 // 100 cents = 1 semitone
+
+	// Apply pitch (in cents) with inheritance - convert cents to semitones  
+	pitch := region.GetInheritedFloatOpcode("pitch", 0.0)
+	semitones += pitch / 100.0 // 100 cents = 1 semitone
 
 	// Convert semitones to pitch ratio: ratio = 2^(semitones/12)
-	pitchRatio := math.Pow(2.0, float64(semitones)/12.0)
+	pitchRatio := math.Pow(2.0, semitones/12.0)
 
-	jackDebug("Pitch adjustment: note=%d, keycenter=%d, semitones=%d, ratio=%f",
-		midiNote, pitchKeycenter, semitones, pitchRatio)
+	jackDebug("Pitch adjustment: note=%d, keycenter=%d, transpose=%d, tune=%.1fc, pitch=%.1fc, total_semitones=%.2f, ratio=%f",
+		midiNote, pitchKeycenter, transpose, tune, pitch, semitones, pitchRatio)
 
 	return pitchRatio
 }

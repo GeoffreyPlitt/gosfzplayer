@@ -21,8 +21,10 @@ type SfzData struct {
 
 // SfzSection represents a section in the SFZ file (global, group, or region)
 type SfzSection struct {
-	Type    string            // "global", "group", or "region"
-	Opcodes map[string]string // opcode name -> value
+	Type      string            // "global", "group", or "region"
+	Opcodes   map[string]string // opcode name -> value
+	ParentGroup *SfzSection     // For regions: the group they belong to (nil if no group)
+	GlobalRef   *SfzSection     // Reference to the global section for inheritance
 }
 
 // ParseSfzFile parses an SFZ file and returns the structured data
@@ -44,6 +46,7 @@ func ParseSfzFile(filePath string) (*SfzData, error) {
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
 	var currentSection *SfzSection
+	var currentGroup *SfzSection // Track the current group for region inheritance
 
 	for scanner.Scan() {
 		lineNum++
@@ -70,8 +73,12 @@ func ParseSfzFile(filePath string) (*SfzData, error) {
 			case "global":
 				sfzData.Global = currentSection
 			case "group":
+				currentGroup = currentSection
+				currentSection.GlobalRef = sfzData.Global
 				sfzData.Groups = append(sfzData.Groups, currentSection)
 			case "region":
+				currentSection.ParentGroup = currentGroup
+				currentSection.GlobalRef = sfzData.Global
 				sfzData.Regions = append(sfzData.Regions, currentSection)
 			default:
 				parserDebug("Warning: Unknown section type: %s", sectionType)
@@ -216,4 +223,98 @@ func (s *SfzSection) GetFloatOpcode(opcode string, defaultValue float64) float64
 	}
 
 	return floatVal
+}
+
+// GetInheritedStringOpcode returns a string opcode value with inheritance (Region → Group → Global)
+func (s *SfzSection) GetInheritedStringOpcode(opcode string) string {
+	if s == nil {
+		return ""
+	}
+
+	// First check this section
+	if value := s.GetStringOpcode(opcode); value != "" {
+		return value
+	}
+
+	// Then check parent group (for regions only)
+	if s.ParentGroup != nil {
+		if value := s.ParentGroup.GetStringOpcode(opcode); value != "" {
+			return value
+		}
+	}
+
+	// Finally check global
+	if s.GlobalRef != nil {
+		return s.GlobalRef.GetStringOpcode(opcode)
+	}
+
+	return ""
+}
+
+// GetInheritedIntOpcode returns an integer opcode value with inheritance (Region → Group → Global)
+func (s *SfzSection) GetInheritedIntOpcode(opcode string, defaultValue int) int {
+	if s == nil {
+		return defaultValue
+	}
+
+	// First check this section
+	if value, exists := s.Opcodes[opcode]; exists {
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
+	}
+
+	// Then check parent group (for regions only)
+	if s.ParentGroup != nil {
+		if value, exists := s.ParentGroup.Opcodes[opcode]; exists {
+			if intVal, err := strconv.Atoi(value); err == nil {
+				return intVal
+			}
+		}
+	}
+
+	// Finally check global
+	if s.GlobalRef != nil {
+		if value, exists := s.GlobalRef.Opcodes[opcode]; exists {
+			if intVal, err := strconv.Atoi(value); err == nil {
+				return intVal
+			}
+		}
+	}
+
+	return defaultValue
+}
+
+// GetInheritedFloatOpcode returns a float opcode value with inheritance (Region → Group → Global)
+func (s *SfzSection) GetInheritedFloatOpcode(opcode string, defaultValue float64) float64 {
+	if s == nil {
+		return defaultValue
+	}
+
+	// First check this section
+	if value, exists := s.Opcodes[opcode]; exists {
+		if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+			return floatVal
+		}
+	}
+
+	// Then check parent group (for regions only)
+	if s.ParentGroup != nil {
+		if value, exists := s.ParentGroup.Opcodes[opcode]; exists {
+			if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+				return floatVal
+			}
+		}
+	}
+
+	// Finally check global
+	if s.GlobalRef != nil {
+		if value, exists := s.GlobalRef.Opcodes[opcode]; exists {
+			if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+				return floatVal
+			}
+		}
+	}
+
+	return defaultValue
 }

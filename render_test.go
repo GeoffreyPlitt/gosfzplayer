@@ -50,6 +50,10 @@ func TestRenderPianoArpeggio(t *testing.T) {
 	bufferSize := 512
 	currentSample := 0
 
+	// Track which notes have been triggered/released to avoid timing window misses
+	noteTriggered := make([]bool, len(arpeggioNotes))
+	noteReleased := make([]bool, len(arpeggioNotes))
+
 	for currentSample < totalSamples {
 		// Calculate current time position
 		currentTime := float64(currentSample) / float64(sampleRate)
@@ -59,14 +63,16 @@ func TestRenderPianoArpeggio(t *testing.T) {
 			noteStartTime := float64(i) * noteLength.Seconds()
 			noteEndTime := noteStartTime + 0.8 // 800ms note duration (80% of quarter note)
 
-			// Check if we should trigger this note
-			if currentTime >= noteStartTime && currentTime < noteStartTime+0.01 { // 10ms trigger window
+			// Check if we should trigger this note (trigger once when time is reached)
+			if !noteTriggered[i] && currentTime >= noteStartTime {
 				mockClient.noteOn(note, 100) // velocity 100
+				noteTriggered[i] = true
 			}
 
-			// Check if we should release this note
-			if currentTime >= noteEndTime && currentTime < noteEndTime+0.01 {
+			// Check if we should release this note (release once when time is reached)
+			if !noteReleased[i] && noteTriggered[i] && currentTime >= noteEndTime {
 				mockClient.noteOff(note)
+				noteReleased[i] = true
 			}
 		}
 
@@ -156,10 +162,10 @@ func (mjc *MockJackClient) noteOff(note uint8) {
 }
 
 func (mjc *MockJackClient) regionMatches(region *SfzSection, note, velocity uint8) bool {
-	// Check key range
-	lokey := region.GetIntOpcode("lokey", 0)
-	hikey := region.GetIntOpcode("hikey", 127)
-	key := region.GetIntOpcode("key", -1)
+	// Check key range with inheritance
+	lokey := region.GetInheritedIntOpcode("lokey", 0)
+	hikey := region.GetInheritedIntOpcode("hikey", 127)
+	key := region.GetInheritedIntOpcode("key", -1)
 
 	if key >= 0 {
 		lokey = key
@@ -170,21 +176,18 @@ func (mjc *MockJackClient) regionMatches(region *SfzSection, note, velocity uint
 		return false
 	}
 
-	// Check velocity range
-	lovel := region.GetIntOpcode("lovel", 1)
-	hivel := region.GetIntOpcode("hivel", 127)
+	// Check velocity range with inheritance
+	lovel := region.GetInheritedIntOpcode("lovel", 1)
+	hivel := region.GetInheritedIntOpcode("hivel", 127)
 
 	return int(velocity) >= lovel && int(velocity) <= hivel
 }
 
 func (mjc *MockJackClient) calculateVolume(region *SfzSection, velocity uint8) float64 {
-	volume := region.GetFloatOpcode("volume", 0.0)
+	// Get volume with inheritance (Region → Group → Global)
+	volume := region.GetInheritedFloatOpcode("volume", 0.0)
 
-	if mjc.player.sfzData.Global != nil {
-		globalVolume := mjc.player.sfzData.Global.GetFloatOpcode("volume", 0.0)
-		volume += globalVolume
-	}
-
+	// Clamp volume to reasonable range
 	if volume > 6.0 {
 		volume = 6.0
 	}
@@ -192,20 +195,20 @@ func (mjc *MockJackClient) calculateVolume(region *SfzSection, velocity uint8) f
 		volume = -60.0
 	}
 
+	// Convert dB to linear gain: linear = 10^(dB/20)
 	linear := math.Pow(10.0, volume/20.0)
+
+	// Velocity scaling (simplified)
 	velocityScale := float64(velocity) / 127.0
 
 	return linear * velocityScale
 }
 
 func (mjc *MockJackClient) calculatePan(region *SfzSection) float64 {
-	pan := region.GetFloatOpcode("pan", 0.0)
+	// Get pan with inheritance (Region → Group → Global)
+	pan := region.GetInheritedFloatOpcode("pan", 0.0)
 
-	if mjc.player.sfzData.Global != nil {
-		globalPan := mjc.player.sfzData.Global.GetFloatOpcode("pan", 0.0)
-		pan += globalPan
-	}
-
+	// Clamp pan to valid range
 	if pan > 100.0 {
 		pan = 100.0
 	}
@@ -213,13 +216,30 @@ func (mjc *MockJackClient) calculatePan(region *SfzSection) float64 {
 		pan = -100.0
 	}
 
-	return pan / 100.0
+	return pan / 100.0 // Normalize to -1.0 to 1.0
 }
 
 func (mjc *MockJackClient) calculatePitchRatio(region *SfzSection, midiNote uint8) float64 {
-	pitchKeycenter := region.GetIntOpcode("pitch_keycenter", int(midiNote))
-	semitones := int(midiNote) - pitchKeycenter
-	return math.Pow(2.0, float64(semitones)/12.0)
+	// Get pitch_keycenter (root note) with inheritance - default to played note if not specified
+	pitchKeycenter := region.GetInheritedIntOpcode("pitch_keycenter", int(midiNote))
+
+	// Calculate semitone difference from pitch_keycenter
+	semitones := float64(int(midiNote) - pitchKeycenter)
+
+	// Apply transpose (in semitones) with inheritance
+	transpose := region.GetInheritedIntOpcode("transpose", 0)
+	semitones += float64(transpose)
+
+	// Apply tune (in cents) with inheritance - convert cents to semitones
+	tune := region.GetInheritedFloatOpcode("tune", 0.0)
+	semitones += tune / 100.0 // 100 cents = 1 semitone
+
+	// Apply pitch (in cents) with inheritance - convert cents to semitones  
+	pitch := region.GetInheritedFloatOpcode("pitch", 0.0)
+	semitones += pitch / 100.0 // 100 cents = 1 semitone
+
+	// Convert semitones to pitch ratio: ratio = 2^(semitones/12)
+	return math.Pow(2.0, semitones/12.0)
 }
 
 func (mjc *MockJackClient) renderVoices(output []float32, nframes uint32) {

@@ -1,8 +1,6 @@
 package gosfzplayer
 
 import (
-	"strconv"
-
 	"github.com/GeoffreyPlitt/debuggo"
 )
 
@@ -55,33 +53,25 @@ func (v *Voice) InitializeEnvelope(sampleRate uint32) {
 	defaultSustain := 1.0    // 100%
 	defaultRelease := 0.1    // 100ms
 
-	// Parse envelope opcodes from region
-	attack := defaultAttack
-	if attackStr := v.region.GetStringOpcode("ampeg_attack"); attackStr != "" {
-		if val, err := strconv.ParseFloat(attackStr, 64); err == nil && val >= 0 {
-			attack = val
-		}
+	// Parse envelope opcodes with inheritance (Region → Group → Global)
+	attack := v.region.GetInheritedFloatOpcode("ampeg_attack", defaultAttack)
+	if attack < 0 {
+		attack = defaultAttack
 	}
 
-	decay := defaultDecay
-	if decayStr := v.region.GetStringOpcode("ampeg_decay"); decayStr != "" {
-		if val, err := strconv.ParseFloat(decayStr, 64); err == nil && val >= 0 {
-			decay = val
-		}
+	decay := v.region.GetInheritedFloatOpcode("ampeg_decay", defaultDecay)
+	if decay < 0 {
+		decay = defaultDecay
 	}
 
-	sustain := defaultSustain
-	if sustainStr := v.region.GetStringOpcode("ampeg_sustain"); sustainStr != "" {
-		if val, err := strconv.ParseFloat(sustainStr, 64); err == nil && val >= 0 && val <= 100 {
-			sustain = val / 100.0 // Convert percentage to 0-1 range
-		}
+	sustain := v.region.GetInheritedFloatOpcode("ampeg_sustain", defaultSustain*100) / 100.0 // Convert percentage to 0-1
+	if sustain < 0 || sustain > 1 {
+		sustain = defaultSustain
 	}
 
-	release := defaultRelease
-	if releaseStr := v.region.GetStringOpcode("ampeg_release"); releaseStr != "" {
-		if val, err := strconv.ParseFloat(releaseStr, 64); err == nil && val >= 0 {
-			release = val
-		}
+	release := v.region.GetInheritedFloatOpcode("ampeg_release", defaultRelease)
+	if release < 0 {
+		release = defaultRelease
 	}
 
 	// Convert times to samples
@@ -183,15 +173,15 @@ func (v *Voice) TriggerRelease() {
 
 // InitializeLoop sets up loop parameters for a voice
 func (v *Voice) InitializeLoop() {
-	// Get loop mode (default: no_loop)
-	v.loopMode = v.region.GetStringOpcode("loop_mode")
+	// Get loop mode with inheritance (default: no_loop)
+	v.loopMode = v.region.GetInheritedStringOpcode("loop_mode")
 	if v.loopMode == "" {
 		v.loopMode = "no_loop"
 	}
 
-	// Get loop points (default: 0 to end of sample)
-	v.loopStart = float64(v.region.GetIntOpcode("loop_start", 0))
-	v.loopEnd = float64(v.region.GetIntOpcode("loop_end", -1))
+	// Get loop points with inheritance (default: 0 to end of sample)
+	v.loopStart = float64(v.region.GetInheritedIntOpcode("loop_start", 0))
+	v.loopEnd = float64(v.region.GetInheritedIntOpcode("loop_end", -1))
 
 	// Validate and set defaults for loop end
 	sampleLength := float64(len(v.sample.Data))
