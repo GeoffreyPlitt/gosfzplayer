@@ -53,7 +53,7 @@ func main() {
 	// Download each file
 	for _, file := range pianoFiles {
 		targetPath := filepath.Join(targetDir, file.name)
-		
+
 		// Skip if file already exists
 		if _, err := os.Stat(targetPath); err == nil {
 			fmt.Printf("  %s already exists, skipping\n", file.name)
@@ -61,7 +61,7 @@ func main() {
 		}
 
 		fmt.Printf("  Downloading %s...", file.name)
-		
+
 		if err := downloadFile(file.url, targetPath); err != nil {
 			fmt.Printf(" FAILED: %v\n", err)
 			os.Exit(1)
@@ -84,7 +84,7 @@ func main() {
 func downloadFile(url, targetPath string) error {
 	// Create HTTP client with timeout
 	client := &http.Client{}
-	
+
 	resp, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to download %s: %w", url, err)

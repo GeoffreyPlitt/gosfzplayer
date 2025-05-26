@@ -7,3 +7,6 @@ CLAUDE.md
 
 # Downloaded piano samples (use go generate to download)
 testdata/piano/*.wav
+
+# Rendered audio output
+testdata/piano_arpeggio.wav
