@@ -38,6 +38,11 @@ type JackClient struct {
 	// Audio rendering state
 	activeVoices []*Voice
 	maxVoices    int
+
+	// Advanced Features
+	currentKeyswitch uint8 // Currently active keyswitch
+	activeNoteCount  int   // Count of active notes for trigger modes
+	pitchBendValue   int16 // Current pitch bend value (-8192 to +8191)
 }
 
 // NewJackClient creates a new JACK client for the SFZ player
@@ -188,6 +193,12 @@ func (jc *JackClient) processMidiEvents(midiBuffer *jack.PortBuffer, nframes uin
 				value := event.Buffer[2]
 				jc.processControlChange(cc, value)
 			}
+		case 0xE0: // Pitch Bend
+			if len(event.Buffer) >= 3 {
+				lsb := event.Buffer[1]
+				msb := event.Buffer[2]
+				jc.processPitchBend(lsb, msb)
+			}
 		}
 	}
 }
@@ -198,6 +209,12 @@ func (jc *JackClient) noteOn(note, velocity uint8) {
 	defer jc.mu.Unlock()
 
 	jackDebug("Note on: note=%d, velocity=%d", note, velocity)
+
+	// Update keyswitch state - check if this note is in any keyswitch range
+	jc.updateKeyswitchState(note)
+
+	// Increment active note count for trigger modes
+	jc.activeNoteCount++
 
 	// Find matching regions
 	for _, region := range jc.player.sfzData.Regions {
@@ -214,18 +231,34 @@ func (jc *JackClient) noteOn(note, velocity uint8) {
 				continue
 			}
 
+			// Get advanced opcodes
+			groupID := region.GetInheritedIntOpcode("group", 0)
+			offByGroup := region.GetInheritedIntOpcode("off_by", 0)
+			triggerMode := region.GetInheritedStringOpcode("trigger")
+			if triggerMode == "" {
+				triggerMode = "attack"
+			}
+
+			// Handle group exclusion - stop voices that should be stopped by this group
+			if groupID > 0 {
+				jc.stopVoicesByOffBy(groupID)
+			}
+
 			// Create new voice
 			voice := &Voice{
-				sample:     sample,
-				region:     region,
-				midiNote:   note,
-				velocity:   velocity,
-				position:   0.0,
-				volume:     jc.calculateVolume(region, velocity),
-				pan:        jc.calculatePan(region),
-				pitchRatio: jc.calculatePitchRatio(region, note),
-				isActive:   true,
-				noteOn:     true,
+				sample:      sample,
+				region:      region,
+				midiNote:    note,
+				velocity:    velocity,
+				position:    0.0,
+				volume:      jc.calculateVolume(region, velocity),
+				pan:         jc.calculatePan(region),
+				pitchRatio:  jc.calculatePitchRatio(region, note),
+				isActive:    true,
+				noteOn:      true,
+				groupID:     groupID,
+				offByGroup:  offByGroup,
+				triggerMode: triggerMode,
 			}
 
 			// Initialize ADSR envelope and loop parameters
@@ -250,12 +283,21 @@ func (jc *JackClient) noteOff(note uint8) {
 
 	jackDebug("Note off: note=%d", note)
 
+	// Decrement active note count
+	jc.activeNoteCount--
+	if jc.activeNoteCount < 0 {
+		jc.activeNoteCount = 0
+	}
+
 	// Trigger release envelope for voices playing this note
 	for _, voice := range jc.activeVoices {
 		if voice.midiNote == note && voice.noteOn {
 			voice.TriggerRelease()
 		}
 	}
+
+	// Handle release trigger regions
+	jc.handleReleaseTriggers(note)
 }
 
 // regionMatches checks if a region should respond to the given note and velocity
@@ -281,6 +323,36 @@ func (jc *JackClient) regionMatches(region *SfzSection, note, velocity uint8) bo
 
 	if int(velocity) < lovel || int(velocity) > hivel {
 		return false
+	}
+
+	// Check keyswitch range
+	swLokey := region.GetInheritedIntOpcode("sw_lokey", -1)
+	swHikey := region.GetInheritedIntOpcode("sw_hikey", -1)
+
+	if swLokey >= 0 && swHikey >= 0 {
+		// This region has keyswitch requirement
+		if int(jc.currentKeyswitch) < swLokey || int(jc.currentKeyswitch) > swHikey {
+			return false
+		}
+	}
+
+	// Check trigger mode
+	triggerMode := region.GetInheritedStringOpcode("trigger")
+	if triggerMode == "" {
+		triggerMode = "attack"
+	}
+
+	switch triggerMode {
+	case "first":
+		if jc.activeNoteCount > 1 { // We already incremented, so >1 means other notes are active
+			return false
+		}
+	case "legato":
+		if jc.activeNoteCount <= 1 { // No other notes active
+			return false
+		}
+	case "release":
+		return false // Release triggers are handled separately in noteOff
 	}
 
 	return true
@@ -333,6 +405,23 @@ func (jc *JackClient) calculatePitchRatio(region *SfzSection, midiNote uint8) fl
 	// Apply pitch (in cents) with inheritance - convert cents to semitones
 	pitch := region.GetInheritedFloatOpcode("pitch", 0.0)
 	semitones += pitch / 100.0 // 100 cents = 1 semitone
+
+	// Apply pitch bend
+	if jc.pitchBendValue != 0 {
+		bendUp := region.GetInheritedIntOpcode("bend_up", 200)      // Default 200 cents up
+		bendDown := region.GetInheritedIntOpcode("bend_down", -200) // Default 200 cents down
+
+		// Calculate pitch bend range and apply
+		if jc.pitchBendValue > 0 {
+			// Positive pitch bend - scale to bend_up range
+			bendSemitones := float64(jc.pitchBendValue) / 8192.0 * float64(bendUp) / 100.0
+			semitones += bendSemitones
+		} else {
+			// Negative pitch bend - scale to bend_down range
+			bendSemitones := float64(jc.pitchBendValue) / 8192.0 * float64(-bendDown) / 100.0
+			semitones += bendSemitones
+		}
+	}
 
 	// Convert semitones to pitch ratio: ratio = 2^(semitones/12)
 	pitchRatio := math.Pow(2.0, semitones/12.0)
@@ -482,6 +571,16 @@ func (jc *JackClient) processControlChange(cc, value uint8) {
 	}
 }
 
+// processPitchBend handles MIDI Pitch Bend messages
+func (jc *JackClient) processPitchBend(lsb, msb uint8) {
+	// Convert 14-bit pitch bend value to signed 16-bit (-8192 to +8191)
+	// LSB = low 7 bits, MSB = high 7 bits
+	bendValue := int16((uint16(msb)<<7)|uint16(lsb)) - 8192
+
+	jc.pitchBendValue = bendValue
+	jackDebug("Pitch Bend: %d (%.3f semitones)", bendValue, float64(bendValue)/8192.0*2.0)
+}
+
 // applyReverb applies reverb processing to the audio buffer
 func (jc *JackClient) applyReverb(audioBuffer []jack.AudioSample, nframes uint32) {
 	// Convert jack.AudioSample to float64, process through reverb, and convert back
@@ -502,4 +601,115 @@ func (jc *JackClient) applyReverb(audioBuffer []jack.AudioSample, nframes uint32
 		// Convert back to jack.AudioSample and clamp
 		audioBuffer[i] = jack.AudioSample(clampFloat64(output, -1.0, 1.0))
 	}
+}
+
+// updateKeyswitchState updates the current keyswitch based on incoming note
+func (jc *JackClient) updateKeyswitchState(note uint8) {
+	// Check all regions for keyswitch ranges and update current keyswitch
+	for _, region := range jc.player.sfzData.Regions {
+		swLokey := region.GetInheritedIntOpcode("sw_lokey", -1)
+		swHikey := region.GetInheritedIntOpcode("sw_hikey", -1)
+
+		if swLokey >= 0 && swHikey >= 0 {
+			if int(note) >= swLokey && int(note) <= swHikey {
+				jc.currentKeyswitch = note
+				jackDebug("Keyswitch updated: %d", note)
+				return
+			}
+		}
+	}
+}
+
+// stopVoicesByOffBy stops all active voices that should be stopped by the given group
+func (jc *JackClient) stopVoicesByOffBy(groupID int) {
+	for i := len(jc.activeVoices) - 1; i >= 0; i-- {
+		voice := jc.activeVoices[i]
+		if voice.offByGroup == groupID {
+			jackDebug("Stopping voice (group exclusion): note=%d, stopped_by_group=%d", voice.midiNote, groupID)
+			// Remove voice immediately
+			jc.activeVoices = append(jc.activeVoices[:i], jc.activeVoices[i+1:]...)
+		}
+	}
+}
+
+// handleReleaseTriggers handles release trigger regions when a note is released
+func (jc *JackClient) handleReleaseTriggers(note uint8) {
+	// Find regions with trigger=release that match this note
+	for _, region := range jc.player.sfzData.Regions {
+		triggerMode := region.GetInheritedStringOpcode("trigger")
+		if triggerMode == "release" {
+			// Check if this region matches the released note (without trigger mode check)
+			if jc.regionMatchesForRelease(region, note) {
+				// Get sample for this region
+				samplePath := region.GetStringOpcode("sample")
+				if samplePath == "" {
+					continue
+				}
+
+				sample, err := jc.player.GetSample(samplePath)
+				if err != nil {
+					jackDebug("Failed to get release sample %s: %v", samplePath, err)
+					continue
+				}
+
+				// Create release voice
+				voice := &Voice{
+					sample:      sample,
+					region:      region,
+					midiNote:    note,
+					velocity:    64, // Use moderate velocity for release triggers
+					position:    0.0,
+					volume:      jc.calculateVolume(region, 64),
+					pan:         jc.calculatePan(region),
+					pitchRatio:  jc.calculatePitchRatio(region, note),
+					isActive:    true,
+					noteOn:      false, // Release triggers don't respond to note-off
+					groupID:     region.GetInheritedIntOpcode("group", 0),
+					offByGroup:  region.GetInheritedIntOpcode("off_by", 0),
+					triggerMode: "release",
+				}
+
+				// Initialize envelope and loop
+				voice.InitializeEnvelope(jc.sampleRate)
+				voice.InitializeLoop()
+
+				// Add voice
+				if len(jc.activeVoices) >= jc.maxVoices {
+					jc.activeVoices = jc.activeVoices[1:]
+				}
+				jc.activeVoices = append(jc.activeVoices, voice)
+
+				jackDebug("Started release voice for note %d", note)
+			}
+		}
+	}
+}
+
+// regionMatchesForRelease checks if a region matches for release triggers (without trigger mode check)
+func (jc *JackClient) regionMatchesForRelease(region *SfzSection, note uint8) bool {
+	// Check key range
+	lokey := region.GetInheritedIntOpcode("lokey", 0)
+	hikey := region.GetInheritedIntOpcode("hikey", 127)
+	key := region.GetInheritedIntOpcode("key", -1)
+
+	if key >= 0 {
+		lokey = key
+		hikey = key
+	}
+
+	if int(note) < lokey || int(note) > hikey {
+		return false
+	}
+
+	// Check keyswitch range (same as normal matching)
+	swLokey := region.GetInheritedIntOpcode("sw_lokey", -1)
+	swHikey := region.GetInheritedIntOpcode("sw_hikey", -1)
+
+	if swLokey >= 0 && swHikey >= 0 {
+		if int(jc.currentKeyswitch) < swLokey || int(jc.currentKeyswitch) > swHikey {
+			return false
+		}
+	}
+
+	return true
 }

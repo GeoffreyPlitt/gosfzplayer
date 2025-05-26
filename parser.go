@@ -170,6 +170,29 @@ func isKnownOpcode(opcode string) bool {
 		"loop_mode":  true,
 		"loop_start": true,
 		"loop_end":   true,
+
+		// Keyswitching
+		"sw_lokey": true,
+		"sw_hikey": true,
+
+		// Groups and Exclusion
+		"group":  true,
+		"off_by": true,
+
+		// Trigger Modes
+		"trigger": true,
+
+		// Pitch Bend
+		"bend_up":   true,
+		"bend_down": true,
+
+		// Reverb
+		"reverb_send":      true,
+		"reverb_room_size": true,
+		"reverb_damping":   true,
+		"reverb_wet":       true,
+		"reverb_dry":       true,
+		"reverb_width":     true,
 	}
 
 	return knownOpcodes[opcode]

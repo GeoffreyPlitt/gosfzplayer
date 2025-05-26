@@ -37,9 +37,9 @@ func TestParseSfzFile(t *testing.T) {
 		}
 	}
 
-	// Verify groups
-	if len(sfzData.Groups) != 2 {
-		t.Errorf("Expected 2 groups, got %d", len(sfzData.Groups))
+	// Verify groups (we now have 4 groups with advanced opcodes)
+	if len(sfzData.Groups) != 4 {
+		t.Errorf("Expected 4 groups, got %d", len(sfzData.Groups))
 	}
 
 	// Check first group opcodes
@@ -61,9 +61,9 @@ func TestParseSfzFile(t *testing.T) {
 		}
 	}
 
-	// Verify regions
-	if len(sfzData.Regions) != 5 {
-		t.Errorf("Expected 5 regions, got %d", len(sfzData.Regions))
+	// Verify regions (we now have 10 regions with advanced opcodes)
+	if len(sfzData.Regions) != 10 {
+		t.Errorf("Expected 10 regions, got %d", len(sfzData.Regions))
 	}
 
 	// Test first region in detail

@@ -43,6 +43,11 @@ type Voice struct {
 	loopMode  string  // Loop mode: no_loop, one_shot, loop_continuous, loop_sustain
 	loopStart float64 // Loop start point in samples
 	loopEnd   float64 // Loop end point in samples
+
+	// Advanced Features
+	groupID     int    // Group number for exclusion
+	offByGroup  int    // Group that can stop this voice
+	triggerMode string // Trigger mode: attack, release, first, legato
 }
 
 // InitializeEnvelope sets up the ADSR envelope for a voice

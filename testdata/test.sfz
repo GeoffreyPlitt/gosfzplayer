@@ -6,6 +6,12 @@
 volume=-6.0      // Global volume reduction in dB
 tune=+10         // Global fine tuning in cents
 pan=0            // Center panning
+reverb_send=30
+reverb_room_size=70
+reverb_damping=40
+reverb_wet=80
+reverb_dry=60
+reverb_width=90
 
 // Group section - affects regions in this group
 <group>
@@ -83,3 +89,54 @@ hivel=127
 pitch_keycenter=c7
 transpose=-12    // Transpose down one octave
 volume=+6.0      // Boost volume
+
+// Group 3: Advanced Features - Keyswitching and Groups
+<group>
+group=1          // Assign to group 1
+off_by=2         // Can be stopped by group 2
+sw_lokey=12      // Keyswitch range: C1-B1 (MIDI 12-23)
+sw_hikey=23
+bend_up=400      // Pitch bend range: up 400 cents
+bend_down=-300   // Down 300 cents
+
+// Region 6: Attack trigger with keyswitch
+<region>
+sample=sample1.wav
+key=c4
+trigger=attack   // Normal attack trigger (default)
+volume=-3.0
+
+// Region 7: Legato trigger 
+<region>
+sample=sample2.wav
+key=d4
+trigger=legato   // Only triggers if other notes are held
+volume=-6.0
+
+// Region 8: First trigger
+<region>
+sample=sample3.wav  
+key=e4
+trigger=first    // Only triggers if no other notes are held
+volume=-3.0
+
+// Group 4: Release triggers and exclusion
+<group>
+group=2          // Group 2 (can stop group 1)
+sw_lokey=24      // Different keyswitch range: C2-B2 (MIDI 24-35)
+sw_hikey=35
+
+// Region 9: Release trigger
+<region>
+sample=sample1.wav
+key=c4
+trigger=release  // Plays on note release
+volume=-9.0
+
+// Region 10: Another group member
+<region>
+sample=sample2.wav
+key=d4
+group=2
+volume=-6.0
+
