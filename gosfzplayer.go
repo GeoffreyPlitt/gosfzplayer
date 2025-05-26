@@ -7,7 +7,7 @@ import (
 	"github.com/GeoffreyPlitt/debuggo"
 )
 
-var debug = debuggo.Debug("sfzplayer:main")
+var debug = debuggo.Debug("sfzplayer:gosfzplayer")
 
 // SfzPlayer represents an SFZ sampler that can parse SFZ files and play samples
 type SfzPlayer struct {

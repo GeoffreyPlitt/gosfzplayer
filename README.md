@@ -126,10 +126,10 @@ Enable debug output with the `DEBUG` environment variable:
 
 ```bash
 # Enable all debug output
-DEBUG=sfzplayer:* go run main.go
+DEBUG=sfzplayer:* go run gosfzplayer.go
 
 # Enable only parser debug output  
-DEBUG=sfzplayer:parser go run main.go
+DEBUG=sfzplayer:parser go run gosfzplayer.go
 ```
 
 ## Reverb System
