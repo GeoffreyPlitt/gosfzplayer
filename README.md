@@ -26,13 +26,6 @@ func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 - **Debug Logging**: Comprehensive logging with configurable namespaces
 - **Type Conversion**: Helper functions for string to numeric type conversion
 
-## Test Assets
-
-The `testdata/` directory contains:
-
-- **`test.sfz`** - Comprehensive SFZ test file that exercises all supported opcodes
-- **`sample1.wav`**, **`sample2.wav`**, **`sample3.wav`** - Test audio samples
-- **`test-behavior.md`** - Detailed documentation of expected behavior for each opcode
 
 ## Dependencies
 
