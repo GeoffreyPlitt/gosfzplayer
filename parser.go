@@ -48,7 +48,7 @@ func ParseSfzFile(filePath string) (*SfzData, error) {
 	for scanner.Scan() {
 		lineNum++
 		line := strings.TrimSpace(scanner.Text())
-		
+
 		// Skip empty lines and comments
 		if line == "" || strings.HasPrefix(line, "//") {
 			continue
@@ -60,7 +60,7 @@ func ParseSfzFile(filePath string) (*SfzData, error) {
 		if strings.HasPrefix(line, "<") && strings.HasSuffix(line, ">") {
 			sectionType := strings.ToLower(strings.Trim(line, "<>"))
 			parserDebug("Found section: %s", sectionType)
-			
+
 			currentSection = &SfzSection{
 				Type:    sectionType,
 				Opcodes: make(map[string]string),
@@ -102,22 +102,22 @@ func ParseSfzFile(filePath string) (*SfzData, error) {
 func parseOpcodes(line string, section *SfzSection, lineNum int) error {
 	// Split line by whitespace to get individual opcodes
 	parts := strings.Fields(line)
-	
+
 	for _, part := range parts {
 		// Skip comments that might appear inline
 		if strings.HasPrefix(part, "//") {
 			break
 		}
-		
+
 		// Find the = separator
 		equalIndex := strings.Index(part, "=")
 		if equalIndex == -1 {
 			continue // Skip parts without =
 		}
-		
+
 		opcode := strings.ToLower(strings.TrimSpace(part[:equalIndex]))
 		value := strings.TrimSpace(part[equalIndex+1:])
-		
+
 		// Validate and store the opcode
 		if isKnownOpcode(opcode) {
 			section.Opcodes[opcode] = value
@@ -126,7 +126,7 @@ func parseOpcodes(line string, section *SfzSection, lineNum int) error {
 			parserDebug("Warning: Unknown opcode '%s' at line %d", opcode, lineNum)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -135,36 +135,36 @@ func isKnownOpcode(opcode string) bool {
 	knownOpcodes := map[string]bool{
 		// Critical Core
 		"sample": true,
-		
+
 		// Key/Velocity Mapping
-		"lokey":  true,
-		"hikey":  true,
-		"lovel":  true,
-		"hivel":  true,
-		"key":    true,
-		
+		"lokey": true,
+		"hikey": true,
+		"lovel": true,
+		"hivel": true,
+		"key":   true,
+
 		// Basic Playback
 		"volume":          true,
 		"pitch_keycenter": true,
-		
+
 		// Envelope
 		"ampeg_attack":  true,
 		"ampeg_decay":   true,
 		"ampeg_sustain": true,
 		"ampeg_release": true,
-		
+
 		// Common Adjustments
 		"tune":      true,
 		"pan":       true,
 		"transpose": true,
 		"pitch":     true,
-		
+
 		// Looping
 		"loop_mode":  true,
 		"loop_start": true,
 		"loop_end":   true,
 	}
-	
+
 	return knownOpcodes[opcode]
 }
 
@@ -183,18 +183,18 @@ func (s *SfzSection) GetIntOpcode(opcode string, defaultValue int) int {
 	if s == nil || s.Opcodes == nil {
 		return defaultValue
 	}
-	
+
 	value, exists := s.Opcodes[opcode]
 	if !exists {
 		return defaultValue
 	}
-	
+
 	intVal, err := strconv.Atoi(value)
 	if err != nil {
 		parserDebug("Warning: Invalid integer value for opcode %s: %s", opcode, value)
 		return defaultValue
 	}
-	
+
 	return intVal
 }
 
@@ -203,17 +203,17 @@ func (s *SfzSection) GetFloatOpcode(opcode string, defaultValue float64) float64
 	if s == nil || s.Opcodes == nil {
 		return defaultValue
 	}
-	
+
 	value, exists := s.Opcodes[opcode]
 	if !exists {
 		return defaultValue
 	}
-	
+
 	floatVal, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		parserDebug("Warning: Invalid float value for opcode %s: %s", opcode, value)
 		return defaultValue
 	}
-	
+
 	return floatVal
 }
