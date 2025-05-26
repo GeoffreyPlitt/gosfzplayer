@@ -71,3 +71,17 @@ jobs:
         name: piano-arpeggio-render
         path: testdata/piano_arpeggio.wav
         retention-days: 90
+
+    - name: Upload audio to GitHub Pages (for direct media embedding)
+      if: matrix.go-version == '1.24' && github.ref == 'refs/heads/main'
+      run: |
+        mkdir -p docs
+        cp testdata/piano_arpeggio.wav docs/
+        
+    - name: Deploy to GitHub Pages
+      if: matrix.go-version == '1.24' && github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        keep_files: true
