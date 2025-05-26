@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the current and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -72,16 +82,23 @@ jobs:
         path: testdata/piano_arpeggio.wav
         retention-days: 90
 
+    - name: Setup Pages
+      if: matrix.go-version == '1.24' && github.ref == 'refs/heads/main'
+      uses: actions/configure-pages@v3
+      
     - name: Upload audio to GitHub Pages (for direct media embedding)
       if: matrix.go-version == '1.24' && github.ref == 'refs/heads/main'
       run: |
-        mkdir -p docs
-        cp testdata/piano_arpeggio.wav docs/
+        mkdir -p _site
+        cp testdata/piano_arpeggio.wav _site/
+        
+    - name: Upload artifact for GitHub Pages
+      if: matrix.go-version == '1.24' && github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: ./_site
         
     - name: Deploy to GitHub Pages
       if: matrix.go-version == '1.24' && github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
-        keep_files: true
+      id: deployment
+      uses: actions/deploy-pages@v2
