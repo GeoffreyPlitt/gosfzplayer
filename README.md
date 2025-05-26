@@ -2,41 +2,14 @@
 
 A Go 1.24 library that implements a simple SFZ sampler as a JACK client.
 
-## Project Status
-
-Currently in development. Milestone 0 (Prologue) is complete.
-
-### Completed Milestones
-
-#### Milestone 0: Prologue ✅
-- Created comprehensive test assets in `testdata/` directory
-- `test.sfz` - SFZ file using all supported opcodes
-- `sample1.wav`, `sample2.wav`, `sample3.wav` - Test audio samples (16-bit mono PCM, 44.1kHz)
-- Documented expected behavior for all opcode usage
-
-## Test Assets
-
-The `testdata/` directory contains:
-
-- **`test.sfz`** - Comprehensive SFZ test file that exercises all supported opcodes including:
-  - Structural elements: `<global>`, `<group>`, `<region>`
-  - Key/velocity mapping: `lokey`, `hikey`, `lovel`, `hivel`, `key`
-  - Basic playback: `volume`, `pitch_keycenter`
-  - Envelope: `ampeg_attack`, `ampeg_decay`, `ampeg_sustain`, `ampeg_release`
-  - Tuning: `tune`, `transpose`, `pitch`
-  - Panning: `pan`
-  - Looping: `loop_mode`, `loop_start`, `loop_end`
-
-- **`sample1.wav`**, **`sample2.wav`**, **`sample3.wav`** - Test audio samples
-
-- **`test-behavior.md`** - Detailed documentation of expected behavior for each opcode
-
 ## Supported SFZ Opcodes
 
-The implementation will support these opcodes in priority order:
+### Structure
+- `<global>` - global settings
+- `<group>` - group definition  
+- `<region>` - region definition
 
 ### Critical Core
-- `<region>` - region definition
 - `sample=` - audio file path
 
 ### Key/Velocity Mapping
@@ -50,10 +23,6 @@ The implementation will support these opcodes in priority order:
 
 ### Envelope
 - `ampeg_attack=`, `ampeg_decay=`, `ampeg_sustain=`, `ampeg_release=` - ADSR envelope
-
-### Structure
-- `<group>` - group definition
-- `<global>` - global settings
 
 ### Common Adjustments
 - `tune=` - fine tuning in cents
