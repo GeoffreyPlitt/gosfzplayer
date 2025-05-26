@@ -39,7 +39,7 @@ func TestRenderPianoArpeggio(t *testing.T) {
 
 	// Timing parameters
 	sampleRate := 44100
-	noteLength := time.Millisecond * 500                                        // 500ms per note
+	noteLength := time.Second * 1                                               // 1 second per quarter note
 	totalDuration := time.Duration(len(arpeggioNotes))*noteLength + time.Second // Extra second for decay
 	totalSamples := int(float64(sampleRate) * totalDuration.Seconds())
 
@@ -57,7 +57,7 @@ func TestRenderPianoArpeggio(t *testing.T) {
 		// Trigger notes at appropriate times
 		for i, note := range arpeggioNotes {
 			noteStartTime := float64(i) * noteLength.Seconds()
-			noteEndTime := noteStartTime + 0.1 // 100ms note duration
+			noteEndTime := noteStartTime + 0.8 // 800ms note duration (80% of quarter note)
 
 			// Check if we should trigger this note
 			if currentTime >= noteStartTime && currentTime < noteStartTime+0.01 { // 10ms trigger window
