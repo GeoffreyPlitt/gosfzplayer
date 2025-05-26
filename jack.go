@@ -206,6 +206,10 @@ func (jc *JackClient) noteOn(note, velocity uint8) {
 				noteOn:     true,
 			}
 
+			// Initialize ADSR envelope and loop parameters
+			voice.InitializeEnvelope(jc.sampleRate)
+			voice.InitializeLoop()
+
 			// Add voice (replace oldest if at max polyphony)
 			if len(jc.activeVoices) >= jc.maxVoices {
 				jc.activeVoices = jc.activeVoices[1:] // Remove oldest voice
@@ -224,13 +228,10 @@ func (jc *JackClient) noteOff(note uint8) {
 
 	jackDebug("Note off: note=%d", note)
 
-	// Mark voices for this note as released
+	// Trigger release envelope for voices playing this note
 	for _, voice := range jc.activeVoices {
 		if voice.midiNote == note && voice.noteOn {
-			voice.noteOn = false
-			// For now, just stop the voice immediately
-			// TODO: Implement proper release envelope
-			voice.isActive = false
+			voice.TriggerRelease()
 		}
 	}
 }
@@ -363,8 +364,11 @@ func (jc *JackClient) renderVoice(voice *Voice, output []jack.AudioSample, nfram
 	}
 
 	for i := uint32(0); i < nframes; i++ {
-		// Check if we've reached the end of the sample
-		if voice.position >= float64(maxSamples-1) {
+		// Process envelope
+		envelopeLevel := voice.ProcessEnvelope()
+
+		// Check if envelope is finished
+		if envelopeLevel <= 0.0 && voice.envelopeState == EnvelopeOff {
 			voice.isActive = false
 			break
 		}
@@ -372,14 +376,20 @@ func (jc *JackClient) renderVoice(voice *Voice, output []jack.AudioSample, nfram
 		// Get the interpolated sample value
 		sampleValue := jc.getInterpolatedSample(sample, voice.position, samplesPerFrame)
 
-		// Apply volume
-		sampleValue *= voice.volume
+		// Apply volume and envelope
+		sampleValue *= voice.volume * envelopeLevel
 
 		// For now, output to mono (ignore panning)
 		output[i] += jack.AudioSample(sampleValue)
 
 		// Advance position by pitch ratio
 		voice.position += voice.pitchRatio
+
+		// Process loop behavior
+		if !voice.ProcessLoop() {
+			voice.isActive = false
+			break
+		}
 	}
 }
 
@@ -388,6 +398,12 @@ func (jc *JackClient) getInterpolatedSample(sample *Sample, position float64, sa
 	// Get integer and fractional parts of position
 	intPos := int(position)
 	fracPos := position - float64(intPos)
+
+	// Ensure we don't go out of bounds
+	maxFrames := len(sample.Data) / samplesPerFrame
+	if intPos >= maxFrames {
+		return 0.0
+	}
 
 	// Get current sample
 	var sample1 float64
@@ -401,7 +417,7 @@ func (jc *JackClient) getInterpolatedSample(sample *Sample, position float64, sa
 
 	// Get next sample for interpolation
 	var sample2 float64
-	if intPos+1 < len(sample.Data)/samplesPerFrame {
+	if intPos+1 < maxFrames {
 		if samplesPerFrame == 1 {
 			// Mono
 			sample2 = sample.Data[intPos+1]

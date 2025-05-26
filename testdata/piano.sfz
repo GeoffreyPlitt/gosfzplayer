@@ -1,9 +1,11 @@
-// Piano SFZ - Public domain piano samples
+// Piano SFZ - Public domain piano samples with pitch-shifted extensions
 // Source: https://github.com/parisjava/wav-piano-sound
 
 <global>
 volume=-6.0
 pan=0
+
+// ===== ORIGINAL SAMPLE RANGE (A3-A4) =====
 
 <region>
 sample=piano/a1.wav
@@ -68,4 +70,84 @@ lovel=1 hivel=127
 <region>
 sample=piano/c2.wav
 key=69 pitch_keycenter=69    // A4
+lovel=1 hivel=127
+
+// ===== PITCH-SHIFTED EXTENSIONS (A#4-C6) =====
+
+// Using f1.wav (F4) shifted up +5 to +7 semitones
+<region>
+sample=piano/f1.wav
+key=70 pitch_keycenter=65    // A#4 (F4 + 5 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/f1s.wav
+key=71 pitch_keycenter=66    // B4 (F#4 + 5 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1.wav
+key=72 pitch_keycenter=67    // C5 (G4 + 5 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1s.wav
+key=73 pitch_keycenter=68    // C#5 (G#4 + 5 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=74 pitch_keycenter=69    // D5 (A4 + 5 semitones)
+lovel=1 hivel=127
+
+// Using higher-quality samples with moderate pitch shifts
+<region>
+sample=piano/g1.wav
+key=75 pitch_keycenter=67    // D#5 (G4 + 8 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1s.wav
+key=76 pitch_keycenter=68    // E5 (G#4 + 8 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=77 pitch_keycenter=69    // F5 (A4 + 8 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1.wav
+key=78 pitch_keycenter=67    // F#5 (G4 + 11 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1s.wav
+key=79 pitch_keycenter=68    // G5 (G#4 + 11 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=80 pitch_keycenter=69    // G#5 (A4 + 11 semitones)
+lovel=1 hivel=127
+
+// Final octave - using the best sample (c2.wav) for extreme shifts
+<region>
+sample=piano/c2.wav
+key=81 pitch_keycenter=69    // A5 (A4 + 12 semitones, 1 octave)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=82 pitch_keycenter=69    // A#5 (A4 + 13 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=83 pitch_keycenter=69    // B5 (A4 + 14 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=84 pitch_keycenter=69    // C6 (A4 + 15 semitones)
 lovel=1 hivel=127

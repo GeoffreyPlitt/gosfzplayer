@@ -132,6 +132,10 @@ func (mjc *MockJackClient) noteOn(note, velocity uint8) {
 				noteOn:     true,
 			}
 
+			// Initialize ADSR envelope and loop parameters
+			voice.InitializeEnvelope(mjc.sampleRate)
+			voice.InitializeLoop()
+
 			// Add voice (replace oldest if at max polyphony)
 			if len(mjc.activeVoices) >= mjc.maxVoices {
 				mjc.activeVoices = mjc.activeVoices[1:]
@@ -243,22 +247,38 @@ func (mjc *MockJackClient) renderVoice(voice *Voice, output []float32, nframes u
 	}
 
 	for i := uint32(0); i < nframes; i++ {
-		if voice.position >= float64(maxSamples-1) {
+		// Process envelope
+		envelopeLevel := voice.ProcessEnvelope()
+
+		// Check if envelope is finished
+		if envelopeLevel <= 0.0 && voice.envelopeState == EnvelopeOff {
 			voice.isActive = false
 			break
 		}
 
 		sampleValue := mjc.getInterpolatedSample(sample, voice.position, samplesPerFrame)
-		sampleValue *= voice.volume
+		sampleValue *= voice.volume * envelopeLevel
 
 		output[i] += float32(sampleValue)
 		voice.position += voice.pitchRatio
+
+		// Process loop behavior
+		if !voice.ProcessLoop() {
+			voice.isActive = false
+			break
+		}
 	}
 }
 
 func (mjc *MockJackClient) getInterpolatedSample(sample *Sample, position float64, samplesPerFrame int) float64 {
 	intPos := int(position)
 	fracPos := position - float64(intPos)
+
+	// Ensure we don't go out of bounds
+	maxFrames := len(sample.Data) / samplesPerFrame
+	if intPos >= maxFrames {
+		return 0.0
+	}
 
 	var sample1 float64
 	if samplesPerFrame == 1 {
@@ -268,7 +288,7 @@ func (mjc *MockJackClient) getInterpolatedSample(sample *Sample, position float6
 	}
 
 	var sample2 float64
-	if intPos+1 < len(sample.Data)/samplesPerFrame {
+	if intPos+1 < maxFrames {
 		if samplesPerFrame == 1 {
 			sample2 = sample.Data[intPos+1]
 		} else {
