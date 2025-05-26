@@ -23,15 +23,15 @@ func TestRenderPianoArpeggio(t *testing.T) {
 	defer player.StopAndClose()
 
 	// Configure reverb for a nice hall sound
-	player.SetReverbSend(0.3)        // 30% reverb send
-	player.SetReverbRoomSize(0.7)    // Large room
-	player.SetReverbDamping(0.4)     // Moderate damping
-	player.SetReverbWet(0.8)         // High wet level
-	player.SetReverbDry(0.6)         // Moderate dry level  
-	player.SetReverbWidth(1.0)       // Full stereo width
+	player.SetReverbSend(0.3)     // 30% reverb send
+	player.SetReverbRoomSize(0.7) // Large room
+	player.SetReverbDamping(0.4)  // Moderate damping
+	player.SetReverbWet(0.8)      // High wet level
+	player.SetReverbDry(0.6)      // Moderate dry level
+	player.SetReverbWidth(1.0)    // Full stereo width
 
 	t.Logf("Reverb configured: Send=%.1f%%, Room=%.1f%%, Damping=%.1f%%, Wet=%.1f%%, Dry=%.1f%%",
-		player.GetReverbSend()*100, player.GetReverbRoomSize()*100, 
+		player.GetReverbSend()*100, player.GetReverbRoomSize()*100,
 		player.GetReverbDamping()*100, player.GetReverbWet()*100, player.GetReverbDry()*100)
 
 	// Create a mock JACK client for offline rendering

@@ -457,17 +457,17 @@ func (mjc *MockJackClient) applyReverb(audioBuffer []float32, nframes uint32) {
 	for i := uint32(0); i < nframes; i++ {
 		// Convert to float64
 		input := float64(audioBuffer[i])
-		
+
 		// Apply reverb send level
 		reverbInput := input * mjc.player.reverbSend
-		
+
 		// Process through reverb (mono)
 		reverbOutput := mjc.player.reverb.ProcessMono(reverbInput)
-		
+
 		// Mix with dry signal
 		dryLevel := 1.0 - mjc.player.reverbSend
 		output := (input * dryLevel) + reverbOutput
-		
+
 		// Convert back to float32 and clamp
 		audioBuffer[i] = float32(clampFloat64(output, -1.0, 1.0))
 	}

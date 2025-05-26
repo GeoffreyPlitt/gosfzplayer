@@ -454,28 +454,28 @@ func (jc *JackClient) getInterpolatedSample(sample *Sample, position float64, sa
 func (jc *JackClient) processControlChange(cc, value uint8) {
 	// Convert MIDI value (0-127) to float (0.0-1.0)
 	floatValue := float64(value) / 127.0
-	
+
 	switch cc {
 	case 91: // Standard MIDI CC for reverb send/depth
 		jc.player.SetReverbSend(floatValue)
 		jackDebug("MIDI CC91 (Reverb Send): %.3f", floatValue)
-		
+
 	case 92: // Reverb room size (custom mapping)
 		jc.player.SetReverbRoomSize(floatValue)
 		jackDebug("MIDI CC92 (Reverb Room Size): %.3f", floatValue)
-		
+
 	case 93: // Reverb damping (custom mapping)
 		jc.player.SetReverbDamping(floatValue)
 		jackDebug("MIDI CC93 (Reverb Damping): %.3f", floatValue)
-		
+
 	case 94: // Reverb wet level (custom mapping)
 		jc.player.SetReverbWet(floatValue)
 		jackDebug("MIDI CC94 (Reverb Wet): %.3f", floatValue)
-		
+
 	case 95: // Reverb dry level (custom mapping)
 		jc.player.SetReverbDry(floatValue)
 		jackDebug("MIDI CC95 (Reverb Dry): %.3f", floatValue)
-		
+
 	default:
 		// Log unknown CC for debugging
 		jackDebug("Unknown MIDI CC%d: %d", cc, value)
@@ -488,17 +488,17 @@ func (jc *JackClient) applyReverb(audioBuffer []jack.AudioSample, nframes uint32
 	for i := uint32(0); i < nframes; i++ {
 		// Convert to float64
 		input := float64(audioBuffer[i])
-		
+
 		// Apply reverb send level
 		reverbInput := input * jc.player.reverbSend
-		
+
 		// Process through reverb (mono)
 		reverbOutput := jc.player.reverb.ProcessMono(reverbInput)
-		
+
 		// Mix with dry signal
 		dryLevel := 1.0 - jc.player.reverbSend
 		output := (input * dryLevel) + reverbOutput
-		
+
 		// Convert back to jack.AudioSample and clamp
 		audioBuffer[i] = jack.AudioSample(clampFloat64(output, -1.0, 1.0))
 	}
