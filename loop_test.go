@@ -281,33 +281,13 @@ func TestLoopEdgeCases(t *testing.T) {
 }
 
 func TestLoopAudioDemo(t *testing.T) {
-	// Skip if piano samples not available
-	if _, err := os.Stat("testdata/piano.sfz"); os.IsNotExist(err) {
-		t.Skip("piano.sfz not found, run 'go generate' to download piano samples")
+	// Skip if EDM drum loop sample not available
+	if _, err := os.Stat("testdata/554146__fupicat__edm-drum-loop-140-bpm.wav"); os.IsNotExist(err) {
+		t.Skip("EDM drum loop sample not found")
 	}
 
-	// Create a simple SFZ content with loop settings
-	sfzContent := `<global>
-ampeg_attack=0.01
-ampeg_decay=0.1
-ampeg_sustain=80
-ampeg_release=0.5
-
-<region>
-sample=samples/C4vL.flac
-key=60
-loop_mode=loop_continuous
-loop_start=5000
-loop_end=15000
-`
-
-	// Create SFZ file in testdata directory
-	sfzPath := "testdata/loop_demo.sfz"
-	err := os.WriteFile(sfzPath, []byte(sfzContent), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create SFZ file: %v", err)
-	}
-	defer os.Remove(sfzPath)
+	// Use the EDM drum loop SFZ file
+	sfzPath := "testdata/edm_drum_loop.sfz"
 
 	// Create SFZ player
 	player, err := NewSfzPlayer(sfzPath, "")
@@ -321,12 +301,12 @@ loop_end=15000
 
 	// Render a sustained note to demonstrate looping
 	sampleRate := 44100
-	duration := 3.0 // 3 seconds to hear the loop
+	duration := 5.0 // 5 seconds to hear the EDM drum loop
 	totalSamples := int(float64(sampleRate) * duration)
 	outputBuffer := make([]float32, totalSamples)
 
 	// Trigger note and hold it
-	mockClient.noteOn(60, 100) // C4, velocity 100
+	mockClient.noteOn(36, 100) // C2, velocity 100 (kick drum note)
 
 	// Render audio
 	bufferSize := 512
@@ -346,14 +326,14 @@ loop_end=15000
 	}
 
 	// Release note at the end
-	mockClient.noteOff(60)
+	mockClient.noteOff(36)
 
 	// Save as WAV file
-	outputPath := "testdata/loop_demo.wav"
+	outputPath := "testdata/edm_loop_demo.wav"
 	err = saveWAV(outputPath, outputBuffer, sampleRate)
 	if err != nil {
 		t.Fatalf("Failed to save WAV file: %v", err)
 	}
 
-	t.Logf("Generated loop demo: %s (%.1f seconds)", outputPath, duration)
+	t.Logf("Generated EDM loop demo: %s (%.1f seconds)", outputPath, duration)
 }

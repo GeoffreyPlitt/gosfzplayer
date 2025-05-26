@@ -1,0 +1,40 @@
+// EDM Drum Loop SFZ
+// Sample: 554146__fupicat__edm-drum-loop-140-bpm.wav
+// Source: https://freesound.org/people/Fupicat/sounds/554146/
+// License: CC0 (Public Domain)
+
+<region>
+sample=554146__fupicat__edm-drum-loop-140-bpm.wav
+
+// Key mapping
+key=36           // C2 (kick drum note)
+lokey=24         // C1 
+hikey=48         // C3
+pitch_keycenter=36
+
+// Loop configuration
+loop_mode=loop_continuous    // Continuous looping
+loop_start=0                 // Start from sample beginning
+loop_end=151175              // End at sample end (~3.428s * 44100Hz)
+
+// Velocity response
+lovel=1
+hivel=127
+amp_velcurve_1=1            // Linear velocity response
+
+// Envelope
+ampeg_attack=0.001          // Very fast attack for drums
+ampeg_decay=0.3             // Natural drum decay
+ampeg_sustain=50            // Moderate sustain level
+ampeg_release=0.8           // Smooth release
+
+// Output settings
+volume=-6                   // Reduce volume slightly
+pan=0                       // Center pan
+tune=0                      // No pitch adjustment
+
+// Optional: filter for tone shaping
+fil_type=lpf_2p             // Low-pass filter
+cutoff=8000                 // Cutoff frequency
+resonance=0.5               // Light resonance
+</region> 
