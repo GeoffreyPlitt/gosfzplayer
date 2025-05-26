@@ -8,6 +8,10 @@
 
 A lightweight Go library (~284K) that implements a simple SFZ sampler with WAV and FLAC sample loading.
 
+**Note:** You must manually connect the JACK ports for audio and MIDI:
+- Connect JACK output port `MyInstrument:out_1` and `MyInstrument:out_2` to your system audio outputs
+- Connect your MIDI controller to JACK input port `MyInstrument:midi_in`
+
 ## API
 
 **Primary Interface:**
@@ -20,7 +24,7 @@ func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 
 - **SFZ File Parsing**: Complete parser for SFZ files with structured data representation
 - **Multi-Format Sample Loading**: Automatic loading and caching of WAV and FLAC audio samples
-- **High-Quality Reverb**: Built-in Freeverb algorithm with real-time control
+- **Decent-Quality Reverb**: Built-in Freeverb algorithm with real-time control
 - **MIDI Control**: Full MIDI CC support for reverb parameters (CC91-95)
 - **SFZ Reverb Opcodes**: Support for reverb opcodes in SFZ files
 - **Sample Caching**: Efficient caching system to avoid duplicate sample loads
@@ -33,16 +37,16 @@ func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 ## Dependencies
 
 - Go 1.22+ (toolchain 1.24.0)
-- github.com/GeoffreyPlitt/debuggo v0.1.0 - for debug logging
-- github.com/go-audio/wav v1.1.0 - for WAV file loading  
-- github.com/mewkiz/flac v1.0.12 - for FLAC file loading
-- github.com/xthexder/go-jack v0.0.0-20220805234212-bc8604043aba - for JACK audio integration
+- [github.com/GeoffreyPlitt/debuggo](https://github.com/GeoffreyPlitt/debuggo) v0.1.0 - for debug logging
+- [github.com/go-audio/wav](https://github.com/go-audio/wav) v1.1.0 - for WAV file loading  
+- [github.com/mewkiz/flac](https://github.com/mewkiz/flac) v1.0.12 - for FLAC file loading
+- [github.com/xthexder/go-jack](https://github.com/xthexder/go-jack) v0.0.0-20220805234212-bc8604043aba - for JACK audio integration
 
 **Indirect dependencies:**
-- github.com/go-audio/audio v1.0.0
-- github.com/go-audio/riff v1.0.0
-- github.com/icza/bitio v1.1.0
-- github.com/mewkiz/pkg v0.0.0-20230226050401-4010bf0fec14
+- [github.com/go-audio/audio](https://github.com/go-audio/audio) v1.0.0
+- [github.com/go-audio/riff](https://github.com/go-audio/riff) v1.0.0
+- [github.com/icza/bitio](https://github.com/icza/bitio) v1.1.0
+- [github.com/mewkiz/pkg](https://github.com/mewkiz/pkg) v0.0.0-20230226050401-4010bf0fec14
 
 ## Usage
 
@@ -101,11 +105,11 @@ The sample demonstrates:
 - **Pitch-shifting** (full 88-key range from sparse sample set)
 - **ADSR envelope processing** (attack/decay/sustain/release)
 - **Loop support** (continuous loops for sustained notes)
-- **High-quality reverb** (Freeverb algorithm with hall-like acoustics)
+- **Decent-quality reverb** (Freeverb algorithm with hall-like acoustics)
 
 ## Reverb System
 
-The SFZ player includes a high-quality **Freeverb** implementation with low CPU usage (~5-10% overhead) and excellent sound quality.
+The SFZ player includes a decent-quality **Freeverb** implementation with low CPU usage (~5-10% overhead) and good sound quality.
 
 ### Programmatic Control
 
@@ -149,7 +153,43 @@ sample=piano_c4.flac
 // Inherits global reverb settings
 ```
 
-### Supported Opcodes
+## Supported SFZ Opcodes
+
+### Core Sample Opcodes
+
+- `sample` - Path to the audio sample file (required)
+- `key` - Root key for the sample
+- `pitch_keycenter` - Reference pitch for the sample
+
+### Key/Velocity Mapping
+
+- `lokey` - Lowest key that triggers this region
+- `hikey` - Highest key that triggers this region  
+- `lovel` - Lowest velocity that triggers this region
+- `hivel` - Highest velocity that triggers this region
+
+### Playback Control
+
+- `volume` - Volume adjustment in dB
+- `pan` - Stereo panning (-100 to 100)
+- `tune` - Fine tuning in cents
+- `transpose` - Transposition in semitones
+- `pitch` - Pitch adjustment
+
+### ADSR Envelope
+
+- `ampeg_attack` - Attack time in seconds
+- `ampeg_decay` - Decay time in seconds
+- `ampeg_sustain` - Sustain level (0-100%)
+- `ampeg_release` - Release time in seconds
+
+### Looping
+
+- `loop_mode` - Loop mode (no_loop, one_shot, loop_continuous, loop_sustain)
+- `loop_start` - Loop start point in samples
+- `loop_end` - Loop end point in samples
+
+### Reverb Opcodes
 
 - `reverb_send` - Reverb send level (0-100)
 - `reverb_room_size` - Room size parameter (0-100)  
