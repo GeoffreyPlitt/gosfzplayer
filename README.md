@@ -1,4 +1,4 @@
-# SFZ Player Library
+# SFZ Player Library 
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/GeoffreyPlitt/gosfzplayer)](https://goreportcard.com/report/github.com/GeoffreyPlitt/gosfzplayer)
 [![Go Reference](https://pkg.go.dev/badge/github.com/GeoffreyPlitt/gosfzplayer.svg)](https://pkg.go.dev/github.com/GeoffreyPlitt/gosfzplayer)
