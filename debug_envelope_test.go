@@ -429,6 +429,22 @@ func TestHighNotePitchAnalysis(t *testing.T) {
 	}
 }
 
+func TestSampleContentAnalysis(t *testing.T) {
+	t.Log("Analyzing actual sample content vs. expected pitch:")
+	
+	// Test the assumption that c2.wav = A4
+	t.Log("Testing sample c2.wav:")
+	t.Log("  Filename suggests: C2 (MIDI 36, ~65 Hz)")
+	t.Log("  piano.sfz maps to: A4 (MIDI 69, 440 Hz)")
+	t.Log("  Difference: 69-36 = 33 semitones = 2.75 octaves")
+	t.Log("  This would cause extreme pitch shifting!")
+	
+	t.Log("Possible explanations:")
+	t.Log("  1. c2.wav filename is misleading - actually contains A4")
+	t.Log("  2. c2.wav contains C2 but wrong pitch_keycenter in sfz")
+	t.Log("  3. Sample source uses different naming convention")
+}
+
 func TestMIDI84PitchDebug(t *testing.T) {
 	// Skip if piano samples not available
 	if _, err := os.Stat("testdata/piano.sfz"); os.IsNotExist(err) {

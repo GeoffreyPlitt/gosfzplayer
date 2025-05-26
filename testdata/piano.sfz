@@ -149,5 +149,5 @@ lovel=1 hivel=127
 
 <region>
 sample=piano/c2.wav
-key=84 pitch_keycenter=69    // C6 (A4 + 15 semitones)
+key=84 pitch_keycenter=60    // C6 (C4 + 24 semitones = 2 octaves)
 lovel=1 hivel=127
