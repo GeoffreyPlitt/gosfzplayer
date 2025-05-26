@@ -8,3 +8,5 @@ testdata/samples/
 
 # Rendered audio output
 testdata/piano_arpeggio.wav
+testdata/loop_demo.wav
+testdata/envelope_demo.wav

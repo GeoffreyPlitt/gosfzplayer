@@ -1,6 +1,7 @@
 package gosfzplayer
 
 import (
+	"os"
 	"testing"
 )
 
@@ -171,4 +172,86 @@ func TestEnvelopeDoesNotCrash(t *testing.T) {
 			t.Errorf("Envelope level should be between 0 and 1 during release, got %f", level)
 		}
 	}
+}
+
+func TestEnvelopeAudioDemo(t *testing.T) {
+	// Skip if piano samples not available
+	if _, err := os.Stat("testdata/piano.sfz"); os.IsNotExist(err) {
+		t.Skip("piano.sfz not found, run 'go generate' to download piano samples")
+	}
+
+	// Create SFZ content with pronounced envelope settings
+	sfzContent := `<global>
+ampeg_attack=0.5
+ampeg_decay=0.8
+ampeg_sustain=40
+ampeg_release=1.2
+
+<region>
+sample=samples/C4vL.flac
+key=60
+`
+
+	// Create SFZ file in testdata directory
+	sfzPath := "testdata/envelope_demo.sfz"
+	err := os.WriteFile(sfzPath, []byte(sfzContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create SFZ file: %v", err)
+	}
+	defer os.Remove(sfzPath)
+
+	// Create SFZ player
+	player, err := NewSfzPlayer(sfzPath, "")
+	if err != nil {
+		t.Fatalf("Failed to create SFZ player: %v", err)
+	}
+	defer player.StopAndClose()
+
+	// Create mock client for rendering
+	mockClient := createTestMockClient(player, 44100, 512)
+
+	// Render a sequence of notes with different envelope phases
+	sampleRate := 44100
+	duration := 6.0 // 6 seconds to hear full envelope cycle
+	totalSamples := int(float64(sampleRate) * duration)
+	outputBuffer := make([]float32, totalSamples)
+
+	// Timing: 2 seconds note on, 4 seconds release
+	noteOnDuration := 2.0
+	noteOnSamples := int(float64(sampleRate) * noteOnDuration)
+
+	// Render audio
+	bufferSize := 512
+	currentSample := 0
+
+	// Trigger note at start
+	mockClient.noteOn(60, 100) // C4, velocity 100
+
+	for currentSample < totalSamples {
+		// Release note after 2 seconds
+		if currentSample >= noteOnSamples {
+			mockClient.noteOff(60)
+		}
+
+		framesToRender := bufferSize
+		if currentSample+bufferSize > totalSamples {
+			framesToRender = totalSamples - currentSample
+		}
+
+		audioBuffer := make([]float32, framesToRender)
+		mockClient.renderVoices(audioBuffer, uint32(framesToRender))
+
+		copy(outputBuffer[currentSample:currentSample+framesToRender], audioBuffer)
+		currentSample += framesToRender
+	}
+
+	// Save as WAV file
+	outputPath := "testdata/envelope_demo.wav"
+	err = saveWAV(outputPath, outputBuffer, sampleRate)
+	if err != nil {
+		t.Fatalf("Failed to save WAV file: %v", err)
+	}
+
+	t.Logf("Generated envelope demo: %s (%.1f seconds)", outputPath, duration)
+	t.Logf("Envelope phases: Attack=0.5s, Decay=0.8s, Sustain=40%%, Release=1.2s")
 }

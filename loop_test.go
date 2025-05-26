@@ -1,6 +1,7 @@
 package gosfzplayer
 
 import (
+	"os"
 	"testing"
 )
 
@@ -277,4 +278,82 @@ func TestLoopEdgeCases(t *testing.T) {
 			t.Error("Expected unknown mode to behave like no_loop and stop at end")
 		}
 	})
+}
+
+func TestLoopAudioDemo(t *testing.T) {
+	// Skip if piano samples not available
+	if _, err := os.Stat("testdata/piano.sfz"); os.IsNotExist(err) {
+		t.Skip("piano.sfz not found, run 'go generate' to download piano samples")
+	}
+
+	// Create a simple SFZ content with loop settings
+	sfzContent := `<global>
+ampeg_attack=0.01
+ampeg_decay=0.1
+ampeg_sustain=80
+ampeg_release=0.5
+
+<region>
+sample=samples/C4vL.flac
+key=60
+loop_mode=loop_continuous
+loop_start=5000
+loop_end=15000
+`
+
+	// Create SFZ file in testdata directory
+	sfzPath := "testdata/loop_demo.sfz"
+	err := os.WriteFile(sfzPath, []byte(sfzContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create SFZ file: %v", err)
+	}
+	defer os.Remove(sfzPath)
+
+	// Create SFZ player
+	player, err := NewSfzPlayer(sfzPath, "")
+	if err != nil {
+		t.Fatalf("Failed to create SFZ player: %v", err)
+	}
+	defer player.StopAndClose()
+
+	// Create mock client for rendering
+	mockClient := createTestMockClient(player, 44100, 512)
+
+	// Render a sustained note to demonstrate looping
+	sampleRate := 44100
+	duration := 3.0 // 3 seconds to hear the loop
+	totalSamples := int(float64(sampleRate) * duration)
+	outputBuffer := make([]float32, totalSamples)
+
+	// Trigger note and hold it
+	mockClient.noteOn(60, 100) // C4, velocity 100
+
+	// Render audio
+	bufferSize := 512
+	currentSample := 0
+
+	for currentSample < totalSamples {
+		framesToRender := bufferSize
+		if currentSample+bufferSize > totalSamples {
+			framesToRender = totalSamples - currentSample
+		}
+
+		audioBuffer := make([]float32, framesToRender)
+		mockClient.renderVoices(audioBuffer, uint32(framesToRender))
+
+		copy(outputBuffer[currentSample:currentSample+framesToRender], audioBuffer)
+		currentSample += framesToRender
+	}
+
+	// Release note at the end
+	mockClient.noteOff(60)
+
+	// Save as WAV file
+	outputPath := "testdata/loop_demo.wav"
+	err = saveWAV(outputPath, outputBuffer, sampleRate)
+	if err != nil {
+		t.Fatalf("Failed to save WAV file: %v", err)
+	}
+
+	t.Logf("Generated loop demo: %s (%.1f seconds)", outputPath, duration)
 }
