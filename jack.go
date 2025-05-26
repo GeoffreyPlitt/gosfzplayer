@@ -29,19 +29,6 @@ type JackClient struct {
 	maxVoices    int
 }
 
-// Voice represents an active playing voice/note
-type Voice struct {
-	sample   *Sample
-	region   *SfzSection
-	midiNote uint8
-	velocity uint8
-	position int64 // Current playback position in samples
-	volume   float64
-	pan      float64
-	isActive bool
-	noteOn   bool
-}
-
 // NewJackClient creates a new JACK client for the SFZ player
 func NewJackClient(player *SfzPlayer, clientName string) (*JackClient, error) {
 	jackDebug("Creating JACK client: %s", clientName)
@@ -207,15 +194,16 @@ func (jc *JackClient) noteOn(note, velocity uint8) {
 
 			// Create new voice
 			voice := &Voice{
-				sample:   sample,
-				region:   region,
-				midiNote: note,
-				velocity: velocity,
-				position: 0,
-				volume:   jc.calculateVolume(region, velocity),
-				pan:      jc.calculatePan(region),
-				isActive: true,
-				noteOn:   true,
+				sample:     sample,
+				region:     region,
+				midiNote:   note,
+				velocity:   velocity,
+				position:   0.0,
+				volume:     jc.calculateVolume(region, velocity),
+				pan:        jc.calculatePan(region),
+				pitchRatio: jc.calculatePitchRatio(region, note),
+				isActive:   true,
+				noteOn:     true,
 			}
 
 			// Add voice (replace oldest if at max polyphony)
@@ -324,6 +312,23 @@ func (jc *JackClient) calculatePan(region *SfzSection) float64 {
 	return pan / 100.0 // Normalize to -1.0 to 1.0
 }
 
+// calculatePitchRatio calculates the pitch adjustment ratio for a voice
+func (jc *JackClient) calculatePitchRatio(region *SfzSection, midiNote uint8) float64 {
+	// Get pitch_keycenter (root note) - default to played note if not specified
+	pitchKeycenter := region.GetIntOpcode("pitch_keycenter", int(midiNote))
+
+	// Calculate semitone difference
+	semitones := int(midiNote) - pitchKeycenter
+
+	// Convert semitones to pitch ratio: ratio = 2^(semitones/12)
+	pitchRatio := math.Pow(2.0, float64(semitones)/12.0)
+
+	jackDebug("Pitch adjustment: note=%d, keycenter=%d, semitones=%d, ratio=%f",
+		midiNote, pitchKeycenter, semitones, pitchRatio)
+
+	return pitchRatio
+}
+
 // renderVoices renders all active voices to the output buffer
 func (jc *JackClient) renderVoices(output []jack.AudioSample, nframes uint32) {
 	jc.mu.RLock()
@@ -343,24 +348,29 @@ func (jc *JackClient) renderVoices(output []jack.AudioSample, nframes uint32) {
 	}
 }
 
-// renderVoice renders a single voice to the output buffer
+// renderVoice renders a single voice to the output buffer with pitch-shifting
 func (jc *JackClient) renderVoice(voice *Voice, output []jack.AudioSample, nframes uint32) {
 	sample := voice.sample
+	maxSamples := len(sample.Data)
+
+	// Handle mono vs stereo sample indexing
+	var samplesPerFrame int
+	if sample.Channels == 1 {
+		samplesPerFrame = 1
+	} else {
+		samplesPerFrame = 2
+		maxSamples = maxSamples / 2 // For stereo, we count frames not individual samples
+	}
 
 	for i := uint32(0); i < nframes; i++ {
-		if voice.position >= int64(len(sample.Data)) {
+		// Check if we've reached the end of the sample
+		if voice.position >= float64(maxSamples-1) {
 			voice.isActive = false
 			break
 		}
 
-		// Get sample data (handle mono/stereo)
-		var sampleValue float64
-		if sample.Channels == 1 {
-			sampleValue = sample.Data[voice.position]
-		} else {
-			// For stereo, just use left channel for now
-			sampleValue = sample.Data[voice.position*2]
-		}
+		// Get the interpolated sample value
+		sampleValue := jc.getInterpolatedSample(sample, voice.position, samplesPerFrame)
 
 		// Apply volume
 		sampleValue *= voice.volume
@@ -368,6 +378,42 @@ func (jc *JackClient) renderVoice(voice *Voice, output []jack.AudioSample, nfram
 		// For now, output to mono (ignore panning)
 		output[i] += jack.AudioSample(sampleValue)
 
-		voice.position++
+		// Advance position by pitch ratio
+		voice.position += voice.pitchRatio
 	}
+}
+
+// getInterpolatedSample performs linear interpolation between sample points
+func (jc *JackClient) getInterpolatedSample(sample *Sample, position float64, samplesPerFrame int) float64 {
+	// Get integer and fractional parts of position
+	intPos := int(position)
+	fracPos := position - float64(intPos)
+
+	// Get current sample
+	var sample1 float64
+	if samplesPerFrame == 1 {
+		// Mono
+		sample1 = sample.Data[intPos]
+	} else {
+		// Stereo - use left channel for now
+		sample1 = sample.Data[intPos*2]
+	}
+
+	// Get next sample for interpolation
+	var sample2 float64
+	if intPos+1 < len(sample.Data)/samplesPerFrame {
+		if samplesPerFrame == 1 {
+			// Mono
+			sample2 = sample.Data[intPos+1]
+		} else {
+			// Stereo - use left channel for now
+			sample2 = sample.Data[(intPos+1)*2]
+		}
+	} else {
+		// At end of sample, use same value
+		sample2 = sample1
+	}
+
+	// Linear interpolation: result = sample1 + fracPos * (sample2 - sample1)
+	return sample1 + fracPos*(sample2-sample1)
 }
