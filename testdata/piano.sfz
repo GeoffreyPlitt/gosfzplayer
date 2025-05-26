@@ -5,6 +5,53 @@
 volume=-6.0
 pan=0
 
+// ===== LOW RANGE EXTENSIONS (C3-G3) =====
+
+<region>
+sample=piano/c1.wav
+key=48 pitch_keycenter=60    // C3 (C4 - 12 semitones = 1 octave down)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c1s.wav
+key=49 pitch_keycenter=61    // C#3 (C#4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/d1.wav
+key=50 pitch_keycenter=62    // D3 (D4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/d1s.wav
+key=51 pitch_keycenter=63    // D#3 (D#4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/e1.wav
+key=52 pitch_keycenter=64    // E3 (E4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/f1.wav
+key=53 pitch_keycenter=65    // F3 (F4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/f1s.wav
+key=54 pitch_keycenter=66    // F#3 (F#4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1.wav
+key=55 pitch_keycenter=67    // G3 (G4 - 12 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1s.wav
+key=56 pitch_keycenter=68    // G#3 (G#4 - 12 semitones)
+lovel=1 hivel=127
+
 // ===== ORIGINAL SAMPLE RANGE (A3-A4) =====
 
 <region>
@@ -150,4 +197,66 @@ lovel=1 hivel=127
 <region>
 sample=piano/c2.wav
 key=84 pitch_keycenter=72    // C6 (C5 + 12 semitones = 1 octave)
+lovel=1 hivel=127
+
+// ===== HIGH RANGE EXTENSIONS (C#6-C7) =====
+
+<region>
+sample=piano/c2.wav
+key=85 pitch_keycenter=72    // C#6 (C5 + 13 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=86 pitch_keycenter=72    // D6 (C5 + 14 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=87 pitch_keycenter=72    // D#6 (C5 + 15 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=88 pitch_keycenter=72    // E6 (C5 + 16 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=89 pitch_keycenter=72    // F6 (C5 + 17 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=90 pitch_keycenter=72    // F#6 (C5 + 18 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=91 pitch_keycenter=72    // G6 (C5 + 19 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=92 pitch_keycenter=72    // G#6 (C5 + 20 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=93 pitch_keycenter=72    // A6 (C5 + 21 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=94 pitch_keycenter=72    // A#6 (C5 + 22 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=95 pitch_keycenter=72    // B6 (C5 + 23 semitones)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=96 pitch_keycenter=72    // C7 (C5 + 24 semitones = 2 octaves)
 lovel=1 hivel=127

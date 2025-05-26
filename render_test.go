@@ -33,9 +33,9 @@ func TestRenderPianoArpeggio(t *testing.T) {
 		maxVoices:    32,
 	}
 
-	// Define 2-octave C major arpeggio pattern: C-E-G-C-E-G-C (up 2 octaves)
-	// MIDI notes: 60(C4) 64(E4) 67(G4) 72(C5) 76(E5) 79(G5) 84(C6)
-	arpeggioNotes := []uint8{60, 64, 67, 72, 76, 79, 84}
+	// Define 4-octave C major arpeggio pattern: C-E-G-C-E-G-C-E-G-C-E-G-C (up 4 octaves)
+	// MIDI notes: 48(C3) 52(E3) 55(G3) 60(C4) 64(E4) 67(G4) 72(C5) 76(E5) 79(G5) 84(C6) 88(E6) 91(G6) 96(C7)
+	arpeggioNotes := []uint8{48, 52, 55, 60, 64, 67, 72, 76, 79, 84, 88, 91, 96}
 
 	// Timing parameters
 	sampleRate := 44100
