@@ -1,5 +1,6 @@
 # SFZ Player Library
 
+[![Release](https://img.shields.io/github/v/release/GeoffreyPlitt/gosfzplayer)](https://github.com/GeoffreyPlitt/gosfzplayer/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/GeoffreyPlitt/gosfzplayer)](https://goreportcard.com/report/github.com/GeoffreyPlitt/gosfzplayer)
 [![Go Reference](https://pkg.go.dev/badge/github.com/GeoffreyPlitt/gosfzplayer.svg)](https://pkg.go.dev/github.com/GeoffreyPlitt/gosfzplayer)
 [![Test](https://github.com/GeoffreyPlitt/gosfzplayer/workflows/Test/badge.svg)](https://github.com/GeoffreyPlitt/gosfzplayer/actions?query=workflow%3ATest)
