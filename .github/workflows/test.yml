@@ -35,14 +35,14 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
     
+    - name: Generate piano samples for testing
+      run: go generate ./...
+    
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.txt ./...
     
     - name: Run tests with debug output
       run: DEBUG=sfzplayer:* go test -v ./...
-    
-    - name: Generate piano samples for rendering
-      run: go generate ./...
     
     - name: Run render test to generate audio
       run: go test -v -run "TestRenderPianoArpeggio"
