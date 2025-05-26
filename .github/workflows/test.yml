@@ -39,6 +39,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-${{ matrix.go-version }}-
     
+    - name: Cache piano samples
+      uses: actions/cache@v4
+      with:
+        path: testdata/samples
+        key: piano-samples-${{ hashFiles('testdata/piano.sfz', 'scripts/download_piano.go') }}
+        restore-keys: |
+          piano-samples-
+    
     - name: Download dependencies
       run: go mod download
     
