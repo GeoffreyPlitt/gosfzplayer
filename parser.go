@@ -177,6 +177,54 @@ func isKnownOpcode(opcode string) bool {
 
 // Helper functions to extract specific opcode values with type conversion
 
+// getInheritedValue performs inheritance lookup for any opcode
+func (s *SfzSection) getInheritedValue(opcode string) (string, bool) {
+	if s == nil {
+		return "", false
+	}
+
+	// First check this section
+	if value, exists := s.Opcodes[opcode]; exists {
+		return value, true
+	}
+
+	// Then check parent group (for regions only)
+	if s.ParentGroup != nil {
+		if value, exists := s.ParentGroup.Opcodes[opcode]; exists {
+			return value, true
+		}
+	}
+
+	// Finally check global
+	if s.GlobalRef != nil {
+		if value, exists := s.GlobalRef.Opcodes[opcode]; exists {
+			return value, true
+		}
+	}
+
+	return "", false
+}
+
+// convertToInt safely converts a string to int with error handling
+func convertToInt(value, opcode string, defaultValue int) int {
+	intVal, err := strconv.Atoi(value)
+	if err != nil {
+		parserDebug("Warning: Invalid integer value for opcode %s: %s", opcode, value)
+		return defaultValue
+	}
+	return intVal
+}
+
+// convertToFloat safely converts a string to float64 with error handling
+func convertToFloat(value, opcode string, defaultValue float64) float64 {
+	floatVal, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		parserDebug("Warning: Invalid float value for opcode %s: %s", opcode, value)
+		return defaultValue
+	}
+	return floatVal
+}
+
 // GetStringOpcode returns a string opcode value, or empty string if not found
 func (s *SfzSection) GetStringOpcode(opcode string) string {
 	if s == nil || s.Opcodes == nil {
@@ -196,13 +244,7 @@ func (s *SfzSection) GetIntOpcode(opcode string, defaultValue int) int {
 		return defaultValue
 	}
 
-	intVal, err := strconv.Atoi(value)
-	if err != nil {
-		parserDebug("Warning: Invalid integer value for opcode %s: %s", opcode, value)
-		return defaultValue
-	}
-
-	return intVal
+	return convertToInt(value, opcode, defaultValue)
 }
 
 // GetFloatOpcode returns a float opcode value, or defaultValue if not found or invalid
@@ -216,105 +258,27 @@ func (s *SfzSection) GetFloatOpcode(opcode string, defaultValue float64) float64
 		return defaultValue
 	}
 
-	floatVal, err := strconv.ParseFloat(value, 64)
-	if err != nil {
-		parserDebug("Warning: Invalid float value for opcode %s: %s", opcode, value)
-		return defaultValue
-	}
-
-	return floatVal
+	return convertToFloat(value, opcode, defaultValue)
 }
 
 // GetInheritedStringOpcode returns a string opcode value with inheritance (Region → Group → Global)
 func (s *SfzSection) GetInheritedStringOpcode(opcode string) string {
-	if s == nil {
-		return ""
-	}
-
-	// First check this section
-	if value := s.GetStringOpcode(opcode); value != "" {
-		return value
-	}
-
-	// Then check parent group (for regions only)
-	if s.ParentGroup != nil {
-		if value := s.ParentGroup.GetStringOpcode(opcode); value != "" {
-			return value
-		}
-	}
-
-	// Finally check global
-	if s.GlobalRef != nil {
-		return s.GlobalRef.GetStringOpcode(opcode)
-	}
-
-	return ""
+	value, _ := s.getInheritedValue(opcode)
+	return value
 }
 
 // GetInheritedIntOpcode returns an integer opcode value with inheritance (Region → Group → Global)
 func (s *SfzSection) GetInheritedIntOpcode(opcode string, defaultValue int) int {
-	if s == nil {
-		return defaultValue
+	if value, exists := s.getInheritedValue(opcode); exists {
+		return convertToInt(value, opcode, defaultValue)
 	}
-
-	// First check this section
-	if value, exists := s.Opcodes[opcode]; exists {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
-		}
-	}
-
-	// Then check parent group (for regions only)
-	if s.ParentGroup != nil {
-		if value, exists := s.ParentGroup.Opcodes[opcode]; exists {
-			if intVal, err := strconv.Atoi(value); err == nil {
-				return intVal
-			}
-		}
-	}
-
-	// Finally check global
-	if s.GlobalRef != nil {
-		if value, exists := s.GlobalRef.Opcodes[opcode]; exists {
-			if intVal, err := strconv.Atoi(value); err == nil {
-				return intVal
-			}
-		}
-	}
-
 	return defaultValue
 }
 
 // GetInheritedFloatOpcode returns a float opcode value with inheritance (Region → Group → Global)
 func (s *SfzSection) GetInheritedFloatOpcode(opcode string, defaultValue float64) float64 {
-	if s == nil {
-		return defaultValue
+	if value, exists := s.getInheritedValue(opcode); exists {
+		return convertToFloat(value, opcode, defaultValue)
 	}
-
-	// First check this section
-	if value, exists := s.Opcodes[opcode]; exists {
-		if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
-			return floatVal
-		}
-	}
-
-	// Then check parent group (for regions only)
-	if s.ParentGroup != nil {
-		if value, exists := s.ParentGroup.Opcodes[opcode]; exists {
-			if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
-				return floatVal
-			}
-		}
-	}
-
-	// Finally check global
-	if s.GlobalRef != nil {
-		if value, exists := s.GlobalRef.Opcodes[opcode]; exists {
-			if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
-				return floatVal
-			}
-		}
-	}
-
 	return defaultValue
 }

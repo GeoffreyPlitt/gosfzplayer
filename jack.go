@@ -14,6 +14,17 @@ import (
 
 var jackDebug = debuggo.Debug("sfzplayer:jack")
 
+// Helper function to clamp float64 values
+func clampFloat64(value, min, max float64) float64 {
+	if value > max {
+		return max
+	}
+	if value < min {
+		return min
+	}
+	return value
+}
+
 // JackClient represents a JACK audio client for the SFZ player
 type JackClient struct {
 	client       *jack.Client
@@ -130,6 +141,11 @@ func (jc *JackClient) processCallback(nframes uint32) int {
 	// Render active voices
 	jc.renderVoices(audioOutSamples, nframes)
 
+	// Apply reverb if enabled
+	if jc.player.reverbSend > 0.0 {
+		jc.applyReverb(audioOutSamples, nframes)
+	}
+
 	return 0
 }
 
@@ -165,6 +181,12 @@ func (jc *JackClient) processMidiEvents(midiBuffer *jack.PortBuffer, nframes uin
 			if len(event.Buffer) >= 2 {
 				note := event.Buffer[1]
 				jc.noteOff(note)
+			}
+		case 0xB0: // Control Change (MIDI CC)
+			if len(event.Buffer) >= 3 {
+				cc := event.Buffer[1]
+				value := event.Buffer[2]
+				jc.processControlChange(cc, value)
 			}
 		}
 	}
@@ -270,12 +292,7 @@ func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float6
 	volume := region.GetInheritedFloatOpcode("volume", 0.0)
 
 	// Clamp volume to reasonable range
-	if volume > 6.0 {
-		volume = 6.0
-	}
-	if volume < -60.0 {
-		volume = -60.0
-	}
+	volume = clampFloat64(volume, -60.0, 6.0)
 
 	// Convert dB to linear gain: linear = 10^(dB/20)
 	linear := math.Pow(10.0, volume/20.0)
@@ -292,12 +309,7 @@ func (jc *JackClient) calculatePan(region *SfzSection) float64 {
 	pan := region.GetInheritedFloatOpcode("pan", 0.0)
 
 	// Clamp pan to valid range
-	if pan > 100.0 {
-		pan = 100.0
-	}
-	if pan < -100.0 {
-		pan = -100.0
-	}
+	pan = clampFloat64(pan, -100.0, 100.0)
 
 	return pan / 100.0 // Normalize to -1.0 to 1.0
 }
@@ -324,6 +336,9 @@ func (jc *JackClient) calculatePitchRatio(region *SfzSection, midiNote uint8) fl
 
 	// Convert semitones to pitch ratio: ratio = 2^(semitones/12)
 	pitchRatio := math.Pow(2.0, semitones/12.0)
+
+	// Clamp pitch ratio to reasonable range (avoid extreme values)
+	pitchRatio = clampFloat64(pitchRatio, 0.1, 10.0)
 
 	jackDebug("Pitch adjustment: note=%d, keycenter=%d, transpose=%d, tune=%.1fc, pitch=%.1fc, total_semitones=%.2f, ratio=%f",
 		midiNote, pitchKeycenter, transpose, tune, pitch, semitones, pitchRatio)
@@ -433,4 +448,58 @@ func (jc *JackClient) getInterpolatedSample(sample *Sample, position float64, sa
 
 	// Linear interpolation: result = sample1 + fracPos * (sample2 - sample1)
 	return sample1 + fracPos*(sample2-sample1)
+}
+
+// processControlChange handles MIDI Control Change messages
+func (jc *JackClient) processControlChange(cc, value uint8) {
+	// Convert MIDI value (0-127) to float (0.0-1.0)
+	floatValue := float64(value) / 127.0
+	
+	switch cc {
+	case 91: // Standard MIDI CC for reverb send/depth
+		jc.player.SetReverbSend(floatValue)
+		jackDebug("MIDI CC91 (Reverb Send): %.3f", floatValue)
+		
+	case 92: // Reverb room size (custom mapping)
+		jc.player.SetReverbRoomSize(floatValue)
+		jackDebug("MIDI CC92 (Reverb Room Size): %.3f", floatValue)
+		
+	case 93: // Reverb damping (custom mapping)
+		jc.player.SetReverbDamping(floatValue)
+		jackDebug("MIDI CC93 (Reverb Damping): %.3f", floatValue)
+		
+	case 94: // Reverb wet level (custom mapping)
+		jc.player.SetReverbWet(floatValue)
+		jackDebug("MIDI CC94 (Reverb Wet): %.3f", floatValue)
+		
+	case 95: // Reverb dry level (custom mapping)
+		jc.player.SetReverbDry(floatValue)
+		jackDebug("MIDI CC95 (Reverb Dry): %.3f", floatValue)
+		
+	default:
+		// Log unknown CC for debugging
+		jackDebug("Unknown MIDI CC%d: %d", cc, value)
+	}
+}
+
+// applyReverb applies reverb processing to the audio buffer
+func (jc *JackClient) applyReverb(audioBuffer []jack.AudioSample, nframes uint32) {
+	// Convert jack.AudioSample to float64, process through reverb, and convert back
+	for i := uint32(0); i < nframes; i++ {
+		// Convert to float64
+		input := float64(audioBuffer[i])
+		
+		// Apply reverb send level
+		reverbInput := input * jc.player.reverbSend
+		
+		// Process through reverb (mono)
+		reverbOutput := jc.player.reverb.ProcessMono(reverbInput)
+		
+		// Mix with dry signal
+		dryLevel := 1.0 - jc.player.reverbSend
+		output := (input * dryLevel) + reverbOutput
+		
+		// Convert back to jack.AudioSample and clamp
+		audioBuffer[i] = jack.AudioSample(clampFloat64(output, -1.0, 1.0))
+	}
 }
