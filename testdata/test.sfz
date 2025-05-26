@@ -1,0 +1,85 @@
+// SFZ Test File - Uses every supported opcode at least once
+// This file tests the complete implementation of the SFZ player
+
+// Global section - affects all regions unless overridden
+<global>
+volume=-6.0      // Global volume reduction in dB
+tune=+10         // Global fine tuning in cents
+pan=0            // Center panning
+
+// Group section - affects regions in this group
+<group>
+transpose=0      // No transpose for this group
+pitch=100        // Another tuning opcode (cents)
+ampeg_attack=0.01    // Short attack (10ms)
+ampeg_decay=0.1      // Decay time (100ms)
+ampeg_sustain=80     // Sustain level (80%)
+ampeg_release=0.2    // Release time (200ms)
+
+// Region 1: Basic sample with key range
+<region>
+sample=sample1.wav
+lokey=c2         // C2 (MIDI note 36)
+hikey=c4         // C4 (MIDI note 60)
+lovel=1          // Minimum velocity
+hivel=64         // Medium velocity only
+key=c3           // Root key is C3 (MIDI note 48)
+pitch_keycenter=c3   // Pitch center matches root key
+volume=0.0       // No additional volume change
+loop_mode=no_loop    // No looping
+
+// Region 2: Different sample with single key mapping
+<region>
+sample=sample2.wav
+key=d3           // Single key mapping (D3)
+lovel=65         // Higher velocity range
+hivel=127        // Maximum velocity
+pitch_keycenter=d3   // Root is D3
+volume=-3.0      // Quieter by 3dB
+pan=-50          // Pan left
+tune=-20         // Detune by 20 cents
+loop_mode=loop_continuous  // Continuous looping
+loop_start=1000  // Loop start in samples
+loop_end=8000    // Loop end in samples
+
+// Group 2: Different envelope settings
+<group>
+ampeg_attack=0.5     // Slower attack (500ms)
+ampeg_decay=0.3      // Longer decay (300ms)
+ampeg_sustain=60     // Lower sustain (60%)
+ampeg_release=1.0    // Longer release (1s)
+transpose=12         // Transpose up one octave
+
+// Region 3: High key range with looping
+<region>
+sample=sample3.wav
+lokey=c5         // C5 (MIDI note 72)
+hikey=c7         // C7 (MIDI note 96)
+pitch_keycenter=c6   // Root is C6
+volume=+3.0      // Louder by 3dB
+pan=+75          // Pan right
+tune=+50         // Sharp by 50 cents
+loop_mode=loop_sustain   // Loop while key held
+loop_start=500   // Different loop points
+loop_end=4000
+
+// Region 4: Testing one_shot mode
+<region>
+sample=sample1.wav
+lokey=c1         // Very low range
+hikey=b1         // Up to B1
+pitch_keycenter=c1   // Root at C1
+loop_mode=one_shot   // Play once, ignore note off
+volume=-12.0     // Much quieter
+pitch=-100       // Down by 100 cents (semitone)
+
+// Region 5: Full velocity range, different transpose
+<region>
+sample=sample2.wav
+lokey=c7         // High range
+hikey=c8         // Very high
+lovel=1          // Full velocity range
+hivel=127
+pitch_keycenter=c7
+transpose=-12    // Transpose down one octave
+volume=+6.0      // Boost volume
