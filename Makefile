@@ -1,6 +1,6 @@
 # GoSFZPlayer Makefile
 
-.PHONY: all test clean clean-dry-run clean-piano clean-all generate help build
+.PHONY: all test clean clean-dry-run clean-piano clean-all generate help build size
 
 # Default target
 all: build test
@@ -24,6 +24,21 @@ test-debug:
 # Generate piano samples
 generate:
 	go generate ./...
+
+# Check library binary size
+size:
+	@echo "Building library and checking binary size..."
+	@go build -o .tmp-gosfzplayer-size .
+	@echo
+	@echo "📦 Library Binary Size:"
+	@ls -lh .tmp-gosfzplayer-size | awk '{printf "   Size: %s (%s bytes)\n", $$5, $$5}' 
+	@file .tmp-gosfzplayer-size | sed 's/^.*: /   Type: /'
+	@echo "   Path: .tmp-gosfzplayer-size"
+	@echo
+	@echo "💡 This is the Go library archive (.a) size"
+	@echo "   Includes: SFZ parser, WAV loader, JACK audio, voice management"
+	@echo "   Excludes: Audio samples (loaded dynamically)"
+	@rm -f .tmp-gosfzplayer-size
 
 # Dry run - show what would be cleaned without actually deleting
 clean-dry-run:
@@ -62,4 +77,5 @@ help:
 	@echo "  clean         - Remove gitignored generated files"
 	@echo "  clean-piano   - Remove only piano samples"
 	@echo "  clean-all     - Remove ALL untracked files (dangerous!)"
+	@echo "  size          - Check library binary size"
 	@echo "  help          - Show this help"
