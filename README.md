@@ -13,65 +13,27 @@ A Go library that implements a simple SFZ sampler as a JACK client.
 **Primary Interface:**
 ```go
 func NewSfzPlayer(sfzPath string) (*SfzPlayer, error)
+func (p *SfzPlayer) NewJackClient(clientName string) (*JackClient, error)
 ```
 
-**Parser Functions:**
+**JACK Audio Client:**
 ```go
-func ParseSfzFile(filePath string) (*SfzData, error)
+func (jc *JackClient) Start() error
+func (jc *JackClient) Stop() error
+func (jc *JackClient) Close() error
 ```
 
-**Sample Access:**
-```go
-func (p *SfzPlayer) GetSample(samplePath string) (*Sample, error)
-func (p *SfzPlayer) GetSfzData() *SfzData
-```
-
-**Sample Management:**
-```go
-func NewSampleCache() *SampleCache
-func (sc *SampleCache) LoadSample(filePath string) (*Sample, error)
-func (sc *SampleCache) LoadSampleRelative(sfzDir, relativePath string) (*Sample, error)
-```
-
-**Type Conversion Helpers:**
-```go
-func (s *SfzSection) GetStringOpcode(opcode string) string
-func (s *SfzSection) GetIntOpcode(opcode string, defaultValue int) int
-func (s *SfzSection) GetFloatOpcode(opcode string, defaultValue float64) float64
-```
-
-## Data Structures
-
-```go
-type SfzData struct {
-    Global  *SfzSection
-    Groups  []*SfzSection
-    Regions []*SfzSection
-}
-
-type SfzSection struct {
-    Type    string            // "global", "group", or "region"
-    Opcodes map[string]string // opcode name -> value
-}
-
-type Sample struct {
-    FilePath   string    // Original file path
-    Data       []float64 // Audio data as float64 samples (-1.0 to 1.0)
-    SampleRate int       // Sample rate in Hz
-    Channels   int       // Number of audio channels
-    Length     int       // Number of samples per channel
-}
-```
 
 ## Features
 
 - **SFZ File Parsing**: Complete parser for SFZ files with structured data representation
 - **WAV Sample Loading**: Automatic loading and caching of WAV audio samples
-- **Sample Caching**: Efficient caching system to avoid duplicate sample loads
-- **Normalized Audio Data**: Audio samples normalized to float64 range (-1.0 to 1.0)
-- **Error Handling**: Graceful handling of missing files and invalid syntax
+- **JACK Audio Integration**: Real-time audio playback via JACK Audio Connection Kit
+- **MIDI Input Processing**: Note on/off events trigger sample playback
+- **Key/Velocity Mapping**: Regions respond to specific note and velocity ranges
+- **Volume and Panning**: Support for volume (dB) and pan (-100 to +100) opcodes
+- **Polyphonic Playback**: Multiple simultaneous voices with configurable polyphony limit
 - **Debug Logging**: Comprehensive logging with configurable namespaces
-- **Type Conversion**: Helper functions for string to numeric type conversion
 
 ## Test Assets
 
@@ -84,9 +46,23 @@ The `testdata/` directory contains:
 ## Dependencies
 
 - Go 1.21+ (tested on 1.21, 1.22, 1.23, 1.24)
+- JACK Audio Connection Kit development headers (libjack-jackd2-dev on Ubuntu)
 - github.com/GeoffreyPlitt/debuggo - for debug logging
 - github.com/go-audio/wav - for WAV file loading
-- JACK client library for Go (planned: github.com/xthexder/go-jack)
+- github.com/xthexder/go-jack - for JACK audio integration
+
+## Installation
+
+```bash
+# Install JACK development headers (Ubuntu/Debian)
+sudo apt-get install libjack-jackd2-dev
+
+# Build with JACK support
+go build -tags jack
+
+# Or run tests with JACK support
+go test -tags jack -v
+```
 
 ## Usage
 
@@ -106,15 +82,26 @@ func main() {
         return
     }
     
-    // Access loaded samples
-    sample, err := player.GetSample("sample1.wav")
+    // Create JACK audio client
+    jackClient, err := player.NewJackClient("SFZ Player")
     if err != nil {
-        fmt.Printf("Error getting sample: %v\n", err)
+        fmt.Printf("Error creating JACK client: %v\n", err)
         return
     }
+    defer jackClient.Close()
     
-    fmt.Printf("Loaded sample: %d Hz, %d channels, %d samples\n", 
-        sample.SampleRate, sample.Channels, sample.Length)
+    // Start audio processing
+    err = jackClient.Start()
+    if err != nil {
+        fmt.Printf("Error starting JACK client: %v\n", err)
+        return
+    }
+    defer jackClient.Stop()
+    
+    fmt.Println("SFZ Player running. Connect MIDI input and audio output in QJackCtl.")
+    
+    // Keep running until interrupted
+    select {} // or use signal handling for graceful shutdown
 }
 ```
 
