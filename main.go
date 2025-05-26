@@ -13,7 +13,7 @@ var debug = debuggo.Debug("sfzplayer:main")
 type SfzPlayer struct {
 	sfzData     *SfzData
 	sampleCache *SampleCache
-	sfzDir      string // Directory containing the SFZ file for relative sample paths
+	sfzDir      string      // Directory containing the SFZ file for relative sample paths
 	jackClient  *JackClient // Internal JACK client (nil if JACK not available)
 }
 
@@ -107,18 +107,18 @@ func (p *SfzPlayer) GetSfzData() *SfzData {
 func (p *SfzPlayer) StopAndClose() error {
 	if p.jackClient != nil {
 		debug("Stopping and closing JACK client")
-		
+
 		// Stop first
 		if err := p.jackClient.Stop(); err != nil {
 			debug("Warning: Error stopping JACK client: %v", err)
 		}
-		
+
 		// Then close
 		if err := p.jackClient.Close(); err != nil {
 			debug("Warning: Error closing JACK client: %v", err)
 			return fmt.Errorf("failed to close JACK client: %w", err)
 		}
-		
+
 		p.jackClient = nil
 		debug("JACK client stopped and closed")
 	}

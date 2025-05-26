@@ -114,7 +114,7 @@ func TestSfzPlayerWithSamples(t *testing.T) {
 	}
 
 	if sample.Length != len(sample.Data)/sample.Channels {
-		t.Errorf("Sample length mismatch: expected %d, got %d", 
+		t.Errorf("Sample length mismatch: expected %d, got %d",
 			len(sample.Data)/sample.Channels, sample.Length)
 	}
 }

@@ -56,7 +56,7 @@ func TestRegionMatching(t *testing.T) {
 
 	// Test first region (C2-C4, velocity 1-64)
 	region := regions[0]
-	
+
 	// Should match C3 (MIDI 48) with velocity 50
 	if !jc.regionMatches(region, 48, 50) {
 		t.Error("Expected region to match C3 with velocity 50")

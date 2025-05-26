@@ -22,7 +22,7 @@ type JackClient struct {
 	sampleRate   uint32
 	bufferSize   uint32
 	mu           sync.RWMutex
-	
+
 	// Audio rendering state
 	activeVoices []*Voice
 	maxVoices    int
@@ -30,15 +30,15 @@ type JackClient struct {
 
 // Voice represents an active playing voice/note
 type Voice struct {
-	sample       *Sample
-	region       *SfzSection
-	midiNote     uint8
-	velocity     uint8
-	position     int64  // Current playback position in samples
-	volume       float64
-	pan          float64
-	isActive     bool
-	noteOn       bool
+	sample   *Sample
+	region   *SfzSection
+	midiNote uint8
+	velocity uint8
+	position int64 // Current playback position in samples
+	volume   float64
+	pan      float64
+	isActive bool
+	noteOn   bool
 }
 
 // NewJackClient creates a new JACK client for the SFZ player
@@ -79,7 +79,7 @@ func NewJackClient(player *SfzPlayer, clientName string) (*JackClient, error) {
 	// Set process callback
 	client.SetProcessCallback(jackClient.processCallback)
 
-	jackDebug("JACK client created successfully (sample rate: %d Hz, buffer size: %d)", 
+	jackDebug("JACK client created successfully (sample rate: %d Hz, buffer size: %d)",
 		jackClient.sampleRate, jackClient.bufferSize)
 
 	return jackClient, nil
@@ -88,7 +88,7 @@ func NewJackClient(player *SfzPlayer, clientName string) (*JackClient, error) {
 // Start activates the JACK client and begins audio processing
 func (jc *JackClient) Start() error {
 	jackDebug("Starting JACK client")
-	
+
 	err := jc.client.Activate()
 	if err != nil {
 		return fmt.Errorf("failed to activate JACK client: %w", err)
@@ -101,7 +101,7 @@ func (jc *JackClient) Start() error {
 // Stop deactivates the JACK client
 func (jc *JackClient) Stop() error {
 	jackDebug("Stopping JACK client")
-	
+
 	err := jc.client.Deactivate()
 	if err != nil {
 		return fmt.Errorf("failed to deactivate JACK client: %w", err)
@@ -114,7 +114,7 @@ func (jc *JackClient) Stop() error {
 // Close closes the JACK client connection
 func (jc *JackClient) Close() error {
 	jackDebug("Closing JACK client")
-	
+
 	err := jc.client.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close JACK client: %w", err)
@@ -148,7 +148,7 @@ func (jc *JackClient) processCallback(nframes uint32) int {
 // processMidiEvents processes incoming MIDI events
 func (jc *JackClient) processMidiEvents(midiBuffer *jack.PortBuffer, nframes uint32) {
 	eventCount := jack.MidiGetEventCount(midiBuffer)
-	
+
 	for i := uint32(0); i < eventCount; i++ {
 		event, err := jack.MidiEventGet(midiBuffer, i)
 		if err != nil {
@@ -161,7 +161,7 @@ func (jc *JackClient) processMidiEvents(midiBuffer *jack.PortBuffer, nframes uin
 
 		// Parse MIDI message
 		status := event.Buffer[0]
-		
+
 		switch status & 0xF0 {
 		case 0x90: // Note On
 			if len(event.Buffer) >= 3 {
@@ -278,7 +278,7 @@ func (jc *JackClient) regionMatches(region *SfzSection, note, velocity uint8) bo
 func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float64 {
 	// Base volume from region
 	volume := region.GetFloatOpcode("volume", 0.0)
-	
+
 	// Apply global volume if present
 	if jc.player.sfzData.Global != nil {
 		globalVolume := jc.player.sfzData.Global.GetFloatOpcode("volume", 0.0)
@@ -309,7 +309,7 @@ func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float6
 // calculatePan calculates the pan position for a voice
 func (jc *JackClient) calculatePan(region *SfzSection) float64 {
 	pan := region.GetFloatOpcode("pan", 0.0)
-	
+
 	// Apply global pan if present
 	if jc.player.sfzData.Global != nil {
 		globalPan := jc.player.sfzData.Global.GetFloatOpcode("pan", 0.0)
@@ -335,7 +335,7 @@ func (jc *JackClient) renderVoices(output []jack.AudioSample, nframes uint32) {
 	// Process each active voice
 	for i := len(jc.activeVoices) - 1; i >= 0; i-- {
 		voice := jc.activeVoices[i]
-		
+
 		if !voice.isActive {
 			// Remove inactive voice
 			jc.activeVoices = append(jc.activeVoices[:i], jc.activeVoices[i+1:]...)
@@ -349,7 +349,7 @@ func (jc *JackClient) renderVoices(output []jack.AudioSample, nframes uint32) {
 // renderVoice renders a single voice to the output buffer
 func (jc *JackClient) renderVoice(voice *Voice, output []jack.AudioSample, nframes uint32) {
 	sample := voice.sample
-	
+
 	for i := uint32(0); i < nframes; i++ {
 		if voice.position >= int64(len(sample.Data)) {
 			voice.isActive = false
