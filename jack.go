@@ -5,6 +5,7 @@ package gosfzplayer
 
 import (
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/GeoffreyPlitt/debuggo"
@@ -285,8 +286,7 @@ func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float6
 		volume += globalVolume
 	}
 
-	// Convert dB to linear (simplified - proper implementation would use pow(10, dB/20))
-	// For now, just clamp to reasonable range
+	// Clamp volume to reasonable range
 	if volume > 6.0 {
 		volume = 6.0
 	}
@@ -294,11 +294,8 @@ func (jc *JackClient) calculateVolume(region *SfzSection, velocity uint8) float6
 		volume = -60.0
 	}
 
-	// Simple dB to linear conversion (approximation)
-	linear := 1.0 + (volume / 20.0)
-	if linear < 0.0 {
-		linear = 0.0
-	}
+	// Convert dB to linear gain: linear = 10^(dB/20)
+	linear := math.Pow(10.0, volume/20.0)
 
 	// Velocity scaling (simplified)
 	velocityScale := float64(velocity) / 127.0
