@@ -38,7 +38,7 @@ func TestVoiceCreation(t *testing.T) {
 
 func TestRegionMatching(t *testing.T) {
 	// Create a test SFZ player
-	player, err := NewSfzPlayer("testdata/test.sfz")
+	player, err := NewSfzPlayer("testdata/test.sfz", "test-region")
 	if err != nil {
 		t.Fatalf("Failed to create SFZ player: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestRegionMatching(t *testing.T) {
 
 func TestVolumeCalculation(t *testing.T) {
 	// Create a test SFZ player
-	player, err := NewSfzPlayer("testdata/test.sfz")
+	player, err := NewSfzPlayer("testdata/test.sfz", "test-volume")
 	if err != nil {
 		t.Fatalf("Failed to create SFZ player: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestVolumeCalculation(t *testing.T) {
 
 func TestPanCalculation(t *testing.T) {
 	// Create a test SFZ player
-	player, err := NewSfzPlayer("testdata/test.sfz")
+	player, err := NewSfzPlayer("testdata/test.sfz", "test-pan")
 	if err != nil {
 		t.Fatalf("Failed to create SFZ player: %v", err)
 	}

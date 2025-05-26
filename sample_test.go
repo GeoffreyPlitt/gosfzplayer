@@ -80,7 +80,7 @@ func TestCacheClearAndSize(t *testing.T) {
 
 func TestSfzPlayerWithSamples(t *testing.T) {
 	// Create player with test SFZ file
-	player, err := NewSfzPlayer("testdata/test.sfz")
+	player, err := NewSfzPlayer("testdata/test.sfz", "test-player")
 	if err != nil {
 		t.Fatalf("Failed to create SFZ player: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestSfzPlayerWithSamples(t *testing.T) {
 }
 
 func TestSfzPlayerGetNonexistentSample(t *testing.T) {
-	player, err := NewSfzPlayer("testdata/test.sfz")
+	player, err := NewSfzPlayer("testdata/test.sfz", "test-player-2")
 	if err != nil {
 		t.Fatalf("Failed to create SFZ player: %v", err)
 	}

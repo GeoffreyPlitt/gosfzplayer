@@ -6,21 +6,31 @@
 [![codecov](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer/branch/main/graph/badge.svg)](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/GeoffreyPlitt/gosfzplayer)](https://github.com/GeoffreyPlitt/gosfzplayer)
 
-A Go library that implements a simple SFZ sampler as a JACK client.
+A Go library that implements a simple SFZ sampler with WAV sample loading.
 
 ## API
 
 **Primary Interface:**
 ```go
-func NewSfzPlayer(sfzPath string) (*SfzPlayer, error)
-func (p *SfzPlayer) NewJackClient(clientName string) (*JackClient, error)
+func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 ```
 
-**JACK Audio Client:**
+**Parser Functions:**
 ```go
-func (jc *JackClient) Start() error
-func (jc *JackClient) Stop() error
-func (jc *JackClient) Close() error
+func ParseSfzFile(filePath string) (*SfzData, error)
+```
+
+**Sample Access:**
+```go
+func (p *SfzPlayer) GetSample(samplePath string) (*Sample, error)
+func (p *SfzPlayer) GetSfzData() *SfzData
+```
+
+**Type Conversion Helpers:**
+```go
+func (s *SfzSection) GetStringOpcode(opcode string) string
+func (s *SfzSection) GetIntOpcode(opcode string, defaultValue int) int
+func (s *SfzSection) GetFloatOpcode(opcode string, defaultValue float64) float64
 ```
 
 
@@ -28,12 +38,11 @@ func (jc *JackClient) Close() error
 
 - **SFZ File Parsing**: Complete parser for SFZ files with structured data representation
 - **WAV Sample Loading**: Automatic loading and caching of WAV audio samples
-- **JACK Audio Integration**: Real-time audio playback via JACK Audio Connection Kit
-- **MIDI Input Processing**: Note on/off events trigger sample playback
-- **Key/Velocity Mapping**: Regions respond to specific note and velocity ranges
-- **Volume and Panning**: Support for volume (dB) and pan (-100 to +100) opcodes
-- **Polyphonic Playback**: Multiple simultaneous voices with configurable polyphony limit
+- **Sample Caching**: Efficient caching system to avoid duplicate sample loads
+- **Normalized Audio Data**: Audio samples normalized to float64 range (-1.0 to 1.0)
+- **Error Handling**: Graceful handling of missing files and invalid syntax
 - **Debug Logging**: Comprehensive logging with configurable namespaces
+- **Type Conversion**: Helper functions for string to numeric type conversion
 
 ## Test Assets
 
@@ -46,23 +55,8 @@ The `testdata/` directory contains:
 ## Dependencies
 
 - Go 1.21+ (tested on 1.21, 1.22, 1.23, 1.24)
-- JACK Audio Connection Kit development headers (libjack-jackd2-dev on Ubuntu)
 - github.com/GeoffreyPlitt/debuggo - for debug logging
 - github.com/go-audio/wav - for WAV file loading
-- github.com/xthexder/go-jack - for JACK audio integration
-
-## Installation
-
-```bash
-# Install JACK development headers (Ubuntu/Debian)
-sudo apt-get install libjack-jackd2-dev
-
-# Build with JACK support
-go build -tags jack
-
-# Or run tests with JACK support
-go test -tags jack -v
-```
 
 ## Usage
 
@@ -76,32 +70,21 @@ import (
 
 func main() {
     // Parse an SFZ file and load all samples
-    player, err := gosfzplayer.NewSfzPlayer("path/to/instrument.sfz")
+    player, err := gosfzplayer.NewSfzPlayer("path/to/instrument.sfz", "MyInstrument")
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
     
-    // Create JACK audio client
-    jackClient, err := player.NewJackClient("SFZ Player")
+    // Access loaded samples
+    sample, err := player.GetSample("sample1.wav")
     if err != nil {
-        fmt.Printf("Error creating JACK client: %v\n", err)
+        fmt.Printf("Error getting sample: %v\n", err)
         return
     }
-    defer jackClient.Close()
     
-    // Start audio processing
-    err = jackClient.Start()
-    if err != nil {
-        fmt.Printf("Error starting JACK client: %v\n", err)
-        return
-    }
-    defer jackClient.Stop()
-    
-    fmt.Println("SFZ Player running. Connect MIDI input and audio output in QJackCtl.")
-    
-    // Keep running until interrupted
-    select {} // or use signal handling for graceful shutdown
+    fmt.Printf("Loaded sample: %d Hz, %d channels, %d samples\n", 
+        sample.SampleRate, sample.Channels, sample.Length)
 }
 ```
 

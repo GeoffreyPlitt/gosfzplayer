@@ -18,7 +18,7 @@ func (jc *JackClient) Start() error {
 	return fmt.Errorf("JACK support not enabled")
 }
 
-// Stop returns an error for stub client
+// Stop returns an error for stub client  
 func (jc *JackClient) Stop() error {
 	return fmt.Errorf("JACK support not enabled")
 }

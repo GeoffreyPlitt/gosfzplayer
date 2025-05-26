@@ -4,30 +4,30 @@
 package gosfzplayer
 
 import (
-	"strings"
 	"testing"
 )
 
 func TestJackStubFunctionality(t *testing.T) {
-	// Create a test SFZ player
-	player, err := NewSfzPlayer("testdata/test.sfz")
+	// Create a test SFZ player - JACK client creation should fail silently
+	player, err := NewSfzPlayer("testdata/test.sfz", "test-client")
 	if err != nil {
 		t.Fatalf("Failed to create SFZ player: %v", err)
 	}
 
-	// Try to create JACK client (should fail with stub)
-	jackClient, err := player.NewJackClient("Test Client")
-	if err == nil {
-		t.Error("Expected error when creating JACK client without JACK support")
+	// Player should still be created successfully even without JACK
+	if player == nil {
+		t.Error("Expected player to be created even without JACK support")
 	}
 
-	if jackClient != nil {
-		t.Error("Expected nil JACK client when JACK support is disabled")
+	// JACK client should be nil in stub mode
+	if player.jackClient != nil {
+		t.Error("Expected JACK client to be nil when JACK support is disabled")
 	}
 
-	expectedError := "JACK support not enabled"
-	if !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected error to contain '%s', got: %v", expectedError, err)
+	// StopAndClose should work fine with no JACK client
+	err = player.StopAndClose()
+	if err != nil {
+		t.Errorf("StopAndClose should not error when no JACK client exists: %v", err)
 	}
 }
 

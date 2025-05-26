@@ -14,10 +14,11 @@ type SfzPlayer struct {
 	sfzData     *SfzData
 	sampleCache *SampleCache
 	sfzDir      string // Directory containing the SFZ file for relative sample paths
+	jackClient  *JackClient // Internal JACK client (nil if JACK not available)
 }
 
 // NewSfzPlayer creates a new SFZ player from an SFZ file
-func NewSfzPlayer(sfzPath string) (*SfzPlayer, error) {
+func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error) {
 	debug("Creating new SFZ player for file: %s", sfzPath)
 
 	// Parse the SFZ file
@@ -41,6 +42,26 @@ func NewSfzPlayer(sfzPath string) (*SfzPlayer, error) {
 	err = player.loadAllSamples()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load samples: %w", err)
+	}
+
+	// Try to create and start JACK client automatically if client name provided
+	var jackClient *JackClient
+	if jackClientName != "" {
+		jackClient, err = NewJackClient(player, jackClientName)
+		if err != nil {
+			debug("Warning: Could not create JACK client: %v", err)
+			// Continue without JACK - player still works for sample access
+		} else {
+			err = jackClient.Start()
+			if err != nil {
+				debug("Warning: Could not start JACK client: %v", err)
+				jackClient.Close()
+				jackClient = nil
+			} else {
+				player.jackClient = jackClient
+				debug("JACK client started successfully as '%s'", jackClientName)
+			}
+		}
 	}
 
 	return player, nil
@@ -82,7 +103,24 @@ func (p *SfzPlayer) GetSfzData() *SfzData {
 	return p.sfzData
 }
 
-// NewJackClient creates a new JACK audio client for this SFZ player
-func (p *SfzPlayer) NewJackClient(clientName string) (*JackClient, error) {
-	return NewJackClient(p, clientName)
+// StopAndClose stops and closes the internal JACK client if it's running
+func (p *SfzPlayer) StopAndClose() error {
+	if p.jackClient != nil {
+		debug("Stopping and closing JACK client")
+		
+		// Stop first
+		if err := p.jackClient.Stop(); err != nil {
+			debug("Warning: Error stopping JACK client: %v", err)
+		}
+		
+		// Then close
+		if err := p.jackClient.Close(); err != nil {
+			debug("Warning: Error closing JACK client: %v", err)
+			return fmt.Errorf("failed to close JACK client: %w", err)
+		}
+		
+		p.jackClient = nil
+		debug("JACK client stopped and closed")
+	}
+	return nil
 }
