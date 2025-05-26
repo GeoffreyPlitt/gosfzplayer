@@ -30,21 +30,21 @@ func TestIndividualNoteRendering(t *testing.T) {
 		maxVoices:    32,
 	}
 
-	// Test notes: some in range, some out of range
+	// Test notes: all should work due to pitch-shifting capabilities
 	testNotes := []struct {
 		midiNote uint8
 		name     string
 		expected string // "should work" or "should fail"
 	}{
-		{57, "A3 (lowest sample)", "should work"},   // a1.wav mapped to MIDI 57
-		{60, "C4 (middle C)", "should work"},        // c1.wav mapped to MIDI 60
-		{64, "E4", "should work"},                   // e1.wav mapped to MIDI 64
-		{67, "G4", "should work"},                   // g1.wav mapped to MIDI 67
-		{69, "A4 (highest sample)", "should work"},  // c2.wav mapped to MIDI 69
-		{72, "C5 (1st out of range)", "should fail"}, // No sample for this
-		{76, "E5 (2nd out of range)", "should fail"}, // No sample for this
-		{79, "G5 (3rd out of range)", "should fail"}, // No sample for this
-		{84, "C6 (4th out of range)", "should fail"}, // No sample for this
+		{57, "A3 (lowest sample)", "should work"},    // a1.wav mapped to MIDI 57
+		{60, "C4 (middle C)", "should work"},         // c1.wav mapped to MIDI 60
+		{64, "E4", "should work"},                    // e1.wav mapped to MIDI 64
+		{67, "G4", "should work"},                    // g1.wav mapped to MIDI 67
+		{69, "A4 (highest sample)", "should work"},   // c2.wav mapped to MIDI 69
+		{72, "C5 (now works with pitch-shift)", "should work"}, // Works via pitch-shifting
+		{76, "E5 (now works with pitch-shift)", "should work"}, // Works via pitch-shifting
+		{79, "G5 (now works with pitch-shift)", "should work"}, // Works via pitch-shifting
+		{84, "C6 (now works with pitch-shift)", "should work"}, // Works via pitch-shifting
 	}
 
 	for _, test := range testNotes {
@@ -146,7 +146,9 @@ func TestArpeggioNotesByNote(t *testing.T) {
 	t.Logf("Failing notes (%d): %v", len(failingNotes), failingNotes)
 	
 	if len(failingNotes) > 0 {
-		t.Logf("\nHYPOTHESIS CONFIRMED: %d out of %d arpeggio notes cannot be played due to sample range limitations", 
+		t.Logf("\nSome notes still failing: %d out of %d arpeggio notes cannot be played", 
 			len(failingNotes), len(arpeggioNotes))
+	} else {
+		t.Logf("\n✅ SUCCESS: All %d arpeggio notes can now be played thanks to pitch-shifting!", len(arpeggioNotes))
 	}
 }
