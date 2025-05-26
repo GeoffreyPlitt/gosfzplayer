@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer/branch/main/graph/badge.svg)](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/GeoffreyPlitt/gosfzplayer)](https://github.com/GeoffreyPlitt/gosfzplayer)
 
-A lightweight Go library (~284K) that implements a simple SFZ sampler with WAV and FLAC sample loading.
+A lightweight Go library (~595K) that implements a simple SFZ sampler with WAV and FLAC sample loading.
 
 **Note:** You must manually connect the JACK ports for audio and MIDI:
 - Connect JACK output port `MyInstrument:out_1` and `MyInstrument:out_2` to your system audio outputs
