@@ -81,3 +81,8 @@ func (p *SfzPlayer) GetSample(samplePath string) (*Sample, error) {
 func (p *SfzPlayer) GetSfzData() *SfzData {
 	return p.sfzData
 }
+
+// NewJackClient creates a new JACK audio client for this SFZ player
+func (p *SfzPlayer) NewJackClient(clientName string) (*JackClient, error) {
+	return NewJackClient(p, clientName)
+}

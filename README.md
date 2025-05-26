@@ -3,7 +3,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/GeoffreyPlitt/gosfzplayer)](https://goreportcard.com/report/github.com/GeoffreyPlitt/gosfzplayer)
 [![Go Reference](https://pkg.go.dev/badge/github.com/GeoffreyPlitt/gosfzplayer.svg)](https://pkg.go.dev/github.com/GeoffreyPlitt/gosfzplayer)
 [![Test](https://github.com/GeoffreyPlitt/gosfzplayer/workflows/Test/badge.svg)](https://github.com/GeoffreyPlitt/gosfzplayer/actions?query=workflow%3ATest)
-[![Lint](https://github.com/GeoffreyPlitt/gosfzplayer/workflows/Lint/badge.svg)](https://github.com/GeoffreyPlitt/gosfzplayer/actions?query=workflow%3ALint)
 [![codecov](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer/branch/main/graph/badge.svg)](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/GeoffreyPlitt/gosfzplayer)](https://github.com/GeoffreyPlitt/gosfzplayer)
 

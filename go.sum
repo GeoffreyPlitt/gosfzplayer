@@ -6,3 +6,5 @@ github.com/go-audio/riff v1.0.0 h1:d8iCGbDvox9BfLagY94fBynxSPHO80LmZCaOsmKxokA=
 github.com/go-audio/riff v1.0.0/go.mod h1:l3cQwc85y79NQFCRB7TiPoNiaijp6q8Z0Uv38rVG498=
 github.com/go-audio/wav v1.1.0 h1:jQgLtbqBzY7G+BM8fXF7AHUk1uHUviWS4X39d5rsL2g=
 github.com/go-audio/wav v1.1.0/go.mod h1:mpe9qfwbScEbkd8uybLuIpTgHyrISw/OTuvjUW2iGtE=
+github.com/xthexder/go-jack v0.0.0-20220805234212-bc8604043aba h1:QighQ8fJJOqipXXurg9WghoImtvl7CHTpe21GDYdIkk=
+github.com/xthexder/go-jack v0.0.0-20220805234212-bc8604043aba/go.mod h1:T6DswVPJzBW/Xg64l/gohXVgSW81GwXyMws1fkqxlUg=
