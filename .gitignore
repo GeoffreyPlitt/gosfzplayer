@@ -4,6 +4,7 @@ coverage.txt
 
 # Downloaded piano samples (use go generate to download)
 testdata/piano/*.wav
+testdata/samples/
 
 # Rendered audio output
 testdata/piano_arpeggio.wav

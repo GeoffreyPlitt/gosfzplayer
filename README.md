@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer/branch/main/graph/badge.svg)](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/GeoffreyPlitt/gosfzplayer)](https://github.com/GeoffreyPlitt/gosfzplayer)
 
-A lightweight Go library (~284K) that implements a simple SFZ sampler with WAV sample loading.
+A lightweight Go library (~284K) that implements a simple SFZ sampler with WAV and FLAC sample loading.
 
 ## API
 
@@ -19,7 +19,7 @@ func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 ## Features
 
 - **SFZ File Parsing**: Complete parser for SFZ files with structured data representation
-- **WAV Sample Loading**: Automatic loading and caching of WAV audio samples
+- **Multi-Format Sample Loading**: Automatic loading and caching of WAV and FLAC audio samples
 - **Sample Caching**: Efficient caching system to avoid duplicate sample loads
 - **Normalized Audio Data**: Audio samples normalized to float64 range (-1.0 to 1.0)
 - **Error Handling**: Graceful handling of missing files and invalid syntax
@@ -29,9 +29,17 @@ func NewSfzPlayer(sfzPath string, jackClientName string) (*SfzPlayer, error)
 
 ## Dependencies
 
-- Go 1.21+ (tested on 1.21, 1.22, 1.23, 1.24)
-- github.com/GeoffreyPlitt/debuggo - for debug logging
-- github.com/go-audio/wav - for WAV file loading
+- Go 1.22+ (toolchain 1.24.0)
+- github.com/GeoffreyPlitt/debuggo v0.1.0 - for debug logging
+- github.com/go-audio/wav v1.1.0 - for WAV file loading  
+- github.com/mewkiz/flac v1.0.12 - for FLAC file loading
+- github.com/xthexder/go-jack v0.0.0-20220805234212-bc8604043aba - for JACK audio integration
+
+**Indirect dependencies:**
+- github.com/go-audio/audio v1.0.0
+- github.com/go-audio/riff v1.0.0
+- github.com/icza/bitio v1.1.0
+- github.com/mewkiz/pkg v0.0.0-20230226050401-4010bf0fec14
 
 ## Usage
 

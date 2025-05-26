@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/GeoffreyPlitt/debuggo"
 	"github.com/go-audio/wav"
+	"github.com/mewkiz/flac"
 )
 
 var sampleDebug = debuggo.Debug("sfzplayer:sample")
@@ -32,7 +34,7 @@ func NewSampleCache() *SampleCache {
 	}
 }
 
-// LoadSample loads a WAV file and returns a Sample, using cache if available
+// LoadSample loads a WAV or FLAC file and returns a Sample, using cache if available
 func (sc *SampleCache) LoadSample(filePath string) (*Sample, error) {
 	// Check cache first
 	if sample, exists := sc.samples[filePath]; exists {
@@ -47,10 +49,39 @@ func (sc *SampleCache) LoadSample(filePath string) (*Sample, error) {
 		return nil, fmt.Errorf("sample file not found: %s", filePath)
 	}
 
-	// Open the WAV file
+	// Determine file type based on extension
+	ext := strings.ToLower(filepath.Ext(filePath))
+
+	var sample *Sample
+	var err error
+
+	switch ext {
+	case ".wav":
+		sample, err = sc.loadWAV(filePath)
+	case ".flac":
+		sample, err = sc.loadFLAC(filePath)
+	default:
+		return nil, fmt.Errorf("unsupported audio format: %s (supported: .wav, .flac)", ext)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the sample
+	sc.samples[filePath] = sample
+
+	sampleDebug("Loaded sample: %s (rate: %d Hz, channels: %d, length: %d samples)",
+		filePath, sample.SampleRate, sample.Channels, sample.Length)
+
+	return sample, nil
+}
+
+// loadWAV loads a WAV file
+func (sc *SampleCache) loadWAV(filePath string) (*Sample, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open sample file %s: %w", filePath, err)
+		return nil, fmt.Errorf("failed to open WAV file %s: %w", filePath, err)
 	}
 	defer file.Close()
 
@@ -82,21 +113,81 @@ func (sc *SampleCache) LoadSample(filePath string) (*Sample, error) {
 		}
 	}
 
-	sample := &Sample{
+	return &Sample{
 		FilePath:   filePath,
 		Data:       samples,
 		SampleRate: int(audioData.Format.SampleRate),
 		Channels:   int(audioData.Format.NumChannels),
 		Length:     len(samples) / int(audioData.Format.NumChannels),
+	}, nil
+}
+
+// loadFLAC loads a FLAC file
+func (sc *SampleCache) loadFLAC(filePath string) (*Sample, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open FLAC file %s: %w", filePath, err)
+	}
+	defer file.Close()
+
+	// Create FLAC decoder
+	stream, err := flac.New(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create FLAC decoder for %s: %w", filePath, err)
+	}
+	defer stream.Close()
+
+	// Get stream info
+	info := stream.Info
+	if info == nil {
+		return nil, fmt.Errorf("no stream info available for FLAC file: %s", filePath)
 	}
 
-	// Cache the sample
-	sc.samples[filePath] = sample
+	sampleRate := int(info.SampleRate)
+	channels := int(info.NChannels)
+	bitsPerSample := int(info.BitsPerSample)
 
-	sampleDebug("Loaded sample: %s (rate: %d Hz, channels: %d, length: %d samples)",
-		filePath, sample.SampleRate, sample.Channels, sample.Length)
+	// Read all audio frames
+	var allSamples []float64
+	for {
+		frame, err := stream.ParseNext()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return nil, fmt.Errorf("failed to read FLAC frame from %s: %w", filePath, err)
+		}
 
-	return sample, nil
+		// Convert frame samples to float64
+		for i := 0; i < len(frame.Subframes[0].Samples); i++ {
+			for ch := 0; ch < channels; ch++ {
+				sample := frame.Subframes[ch].Samples[i]
+
+				// Normalize based on bit depth
+				var normalizedSample float64
+				switch bitsPerSample {
+				case 16:
+					normalizedSample = float64(sample) / 32768.0
+				case 24:
+					normalizedSample = float64(sample) / 8388608.0
+				case 32:
+					normalizedSample = float64(sample) / 2147483648.0
+				default:
+					normalizedSample = float64(sample) / 32768.0 // Default to 16-bit
+				}
+
+				allSamples = append(allSamples, normalizedSample)
+			}
+		}
+	}
+
+	return &Sample{
+		FilePath:   filePath,
+		Data:       allSamples,
+		SampleRate: sampleRate,
+		Channels:   channels,
+		Length:     len(allSamples) / channels,
+	}, nil
 }
 
 // LoadSampleRelative loads a sample with a path relative to the SFZ file directory

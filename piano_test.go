@@ -8,21 +8,9 @@ import (
 )
 
 func TestPianoSamplesDownload(t *testing.T) {
-	// This test verifies that the piano samples are available
+	// This test verifies that the piano samples are available (FLAC format)
 	expectedFiles := []string{
-		"testdata/piano/a1.wav",
-		"testdata/piano/a1s.wav",
-		"testdata/piano/b1.wav",
-		"testdata/piano/c1.wav",
-		"testdata/piano/c1s.wav",
-		"testdata/piano/c2.wav",
-		"testdata/piano/d1.wav",
-		"testdata/piano/d1s.wav",
-		"testdata/piano/e1.wav",
-		"testdata/piano/f1.wav",
-		"testdata/piano/f1s.wav",
-		"testdata/piano/g1.wav",
-		"testdata/piano/g1s.wav",
+		"testdata/samples/A0vL.flac",
 	}
 
 	for _, file := range expectedFiles {
@@ -51,9 +39,9 @@ func TestPianoSfzPlayer(t *testing.T) {
 	}
 
 	// Test getting a specific piano sample (relative to SFZ file)
-	sample, err := player.GetSample("piano/c1.wav")
+	sample, err := player.GetSample("samples/C1vH.flac")
 	if err != nil {
-		t.Errorf("Failed to get piano sample piano/c1.wav: %v", err)
+		t.Errorf("Failed to get piano sample samples/C1vH.flac: %v", err)
 	}
 
 	if sample == nil {
