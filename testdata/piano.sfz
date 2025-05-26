@@ -1,0 +1,71 @@
+// Piano SFZ - Public domain piano samples
+// Source: https://github.com/parisjava/wav-piano-sound
+
+<global>
+volume=-6.0
+pan=0
+
+<region>
+sample=piano/a1.wav
+key=57 pitch_keycenter=57    // A3
+lovel=1 hivel=127
+
+<region>
+sample=piano/a1s.wav
+key=58 pitch_keycenter=58    // A#3
+lovel=1 hivel=127
+
+<region>
+sample=piano/b1.wav
+key=59 pitch_keycenter=59    // B3
+lovel=1 hivel=127
+
+<region>
+sample=piano/c1.wav
+key=60 pitch_keycenter=60    // C4 (Middle C)
+lovel=1 hivel=127
+
+<region>
+sample=piano/c1s.wav
+key=61 pitch_keycenter=61    // C#4
+lovel=1 hivel=127
+
+<region>
+sample=piano/d1.wav
+key=62 pitch_keycenter=62    // D4
+lovel=1 hivel=127
+
+<region>
+sample=piano/d1s.wav
+key=63 pitch_keycenter=63    // D#4
+lovel=1 hivel=127
+
+<region>
+sample=piano/e1.wav
+key=64 pitch_keycenter=64    // E4
+lovel=1 hivel=127
+
+<region>
+sample=piano/f1.wav
+key=65 pitch_keycenter=65    // F4
+lovel=1 hivel=127
+
+<region>
+sample=piano/f1s.wav
+key=66 pitch_keycenter=66    // F#4
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1.wav
+key=67 pitch_keycenter=67    // G4
+lovel=1 hivel=127
+
+<region>
+sample=piano/g1s.wav
+key=68 pitch_keycenter=68    // G#4
+lovel=1 hivel=127
+
+<region>
+sample=piano/c2.wav
+key=69 pitch_keycenter=69    // A4
+lovel=1 hivel=127

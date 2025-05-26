@@ -4,3 +4,6 @@ coverage.txt
 
 brief.md
 CLAUDE.md
+
+# Downloaded piano samples (use go generate to download)
+testdata/piano/*.wav
