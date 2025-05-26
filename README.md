@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer/branch/main/graph/badge.svg)](https://codecov.io/gh/GeoffreyPlitt/gosfzplayer)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/GeoffreyPlitt/gosfzplayer)](https://github.com/GeoffreyPlitt/gosfzplayer)
 
-A Go library that implements a simple SFZ sampler with WAV sample loading.
+A lightweight Go library (~284K) that implements a simple SFZ sampler with WAV sample loading.
 
 ## API
 
